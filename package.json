@@ -9,10 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@react-three/drei": "^10.7.7",
-    "@react-three/fiber": "^9.6.1",
+    "@react-three/drei": "^9.122.0",
+    "@react-three/fiber": "^8.17.10",
     "@tailwindcss/forms": "^0.5",
-    "@types/three": "^0.184.1",
+    "@types/three": "^0.169.0",
     "canvas-confetti": "^1",
     "clsx": "^2",
     "date-fns": "^3",
@@ -22,7 +22,7 @@
     "react": "^18",
     "react-dom": "^18",
     "tailwind-merge": "^2",
-    "three": "^0.184.0",
+    "three": "^0.169.0",
     "zustand": "^4"
   },
   "devDependencies": {
