@@ -1,129 +1,206 @@
 'use client'
+import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { GraduationCap, Play, Users, Camera, Calendar, Wifi } from 'lucide-react'
-import ParticleBackground from '../components/ParticleBackground'
+import { GraduationCap, ArrowRight, Sparkles } from 'lucide-react'
 import CountdownTimer from '../components/CountdownTimer'
 
 const UNI_NAME = process.env.NEXT_PUBLIC_UNIVERSITY_NAME || 'Excellence University'
 const YEAR = process.env.NEXT_PUBLIC_CEREMONY_YEAR || '2026'
 
-const features = [
-  { icon: Play, title: 'Live Auditorium', desc: 'Watch the ceremony live — BBB stream on a 3D virtual stage.', href: '/auditorium', color: 'from-red-600 to-rose-600' },
-  { icon: GraduationCap, title: 'Graduate Showcase', desc: 'Browse every graduate\'s profile, achievements, and messages.', href: '/graduates', color: 'from-yellow-600 to-amber-500' },
-  { icon: Users, title: 'Networking Lounge', desc: 'Join virtual tables and connect with fellow graduates.', href: '/networking', color: 'from-blue-600 to-cyan-600' },
-  { icon: Camera, title: 'Photo Booth', desc: 'Graduation photos with custom frames and stickers.', href: '/photo-booth', color: 'from-purple-600 to-pink-600' },
-  { icon: Calendar, title: 'Programme', desc: 'Follow the ceremony schedule live.', href: '/program', color: 'from-green-600 to-teal-600' },
-  { icon: Wifi, title: 'Live Reactions', desc: 'Send real-time emoji reactions during the ceremony.', href: '/auditorium', color: 'from-orange-500 to-amber-500' },
-]
+// ── Starfield canvas ────────────────────────────────────────────────────────
+function Starfield() {
+  const ref = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    const c = ref.current!
+    const ctx = c.getContext('2d')!
+    let raf: number
+    const stars: { x: number; y: number; r: number; o: number; speed: number }[] = []
+
+    const resize = () => { c.width = window.innerWidth; c.height = window.innerHeight }
+    resize()
+    window.addEventListener('resize', resize)
+
+    for (let i = 0; i < 200; i++) {
+      stars.push({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        r: Math.random() * 1.5 + 0.3,
+        o: Math.random(),
+        speed: Math.random() * 0.3 + 0.05,
+      })
+    }
+
+    const draw = (t: number) => {
+      ctx.clearRect(0, 0, c.width, c.height)
+      stars.forEach((s) => {
+        s.o = 0.3 + 0.7 * Math.abs(Math.sin(t * 0.001 * s.speed + s.x))
+        ctx.beginPath()
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(255,255,255,${s.o})`
+        ctx.fill()
+      })
+      raf = requestAnimationFrame(draw)
+    }
+    raf = requestAnimationFrame(draw)
+    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', resize) }
+  }, [])
+  return <canvas ref={ref} className="fixed inset-0 pointer-events-none z-0" />
+}
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-navy relative overflow-hidden">
-      <ParticleBackground />
+    <div className="min-h-screen relative overflow-hidden" style={{
+      background: 'linear-gradient(135deg, #05040f 0%, #0d0820 25%, #120a2e 50%, #0a0d22 75%, #050410 100%)'
+    }}>
+      <Starfield />
 
-      {/* Deep radial glow behind hero */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[700px] rounded-full pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse, rgba(212,175,55,0.07) 0%, transparent 70%)' }} />
+      {/* Huge radial glow — violet/purple centre */}
+      <div className="fixed inset-0 pointer-events-none z-0"
+        style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 30%, rgba(139,92,246,0.18) 0%, rgba(212,175,55,0.06) 55%, transparent 100%)' }} />
 
-      {/* Nav */}
-      <nav className="relative z-10 flex items-center justify-between px-6 py-5 max-w-7xl mx-auto">
-        <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gold to-gold-dark flex items-center justify-center">
-            <GraduationCap className="w-5 h-5 text-navy" />
+      {/* Subtle horizontal light band */}
+      <div className="fixed left-0 right-0 pointer-events-none z-0"
+        style={{ top: '38%', height: 1, background: 'linear-gradient(90deg, transparent, rgba(212,175,55,0.3), rgba(139,92,246,0.4), rgba(212,175,55,0.3), transparent)' }} />
+
+      {/* ── Nav ── */}
+      <nav className="relative z-10 flex items-center justify-between px-6 sm:px-10 py-6 max-w-7xl mx-auto">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+            style={{ background: 'linear-gradient(135deg, #D4AF37, #8B5CF6)' }}>
+            <GraduationCap className="w-5 h-5 text-white" />
           </div>
-          <span className="font-serif font-bold text-white text-lg">{UNI_NAME}</span>
+          <span className="font-serif font-bold text-white text-base sm:text-lg tracking-wide">{UNI_NAME}</span>
         </div>
-        <div className="flex items-center gap-4">
-          <Link href="/program" className="hidden sm:block text-sm text-white/60 hover:text-white transition-colors">Programme</Link>
-          <Link href="/lobby" className="px-5 py-2 rounded-xl bg-gold text-navy font-semibold text-sm hover:bg-gold-light transition-colors">
-            Enter Ceremony
+        <div className="flex items-center gap-3 sm:gap-5">
+          <Link href="/program" className="hidden sm:block text-sm text-white/50 hover:text-white transition-colors">Programme</Link>
+          <Link href="/graduates" className="hidden sm:block text-sm text-white/50 hover:text-white transition-colors">Graduates</Link>
+          <Link href="/lobby"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm text-white transition-all hover:opacity-90 hover:scale-105"
+            style={{ background: 'linear-gradient(135deg, #7c3aed, #D4AF37)' }}>
+            Enter <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="relative z-10 flex flex-col items-center justify-center text-center px-4 pt-12 pb-20">
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="max-w-4xl mx-auto">
+      {/* ── Hero ── */}
+      <section className="relative z-10 flex flex-col items-center justify-center text-center px-4 pt-8 pb-20 min-h-[85vh]">
 
-          <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-gold mb-8">
-            <span className="w-2 h-2 rounded-full bg-gold animate-pulse" />
-            <span className="text-xs font-semibold text-gold uppercase tracking-widest">Virtual Graduation Ceremony {YEAR}</span>
-          </motion.div>
+        {/* Badge */}
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-8 border"
+          style={{ background: 'rgba(139,92,246,0.12)', borderColor: 'rgba(139,92,246,0.35)' }}>
+          <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+          <span className="text-xs font-semibold uppercase tracking-widest text-purple-300">
+            Virtual Graduation · Class of {YEAR}
+          </span>
+        </motion.div>
 
-          <h1 className="text-5xl sm:text-6xl md:text-8xl font-serif font-bold text-white leading-tight mb-6">
-            Celebrating the{' '}
-            <span className="gold-text">Class of {YEAR}</span>
-          </h1>
+        {/* Main heading */}
+        <motion.h1
+          initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.9 }}
+          className="text-5xl sm:text-7xl md:text-8xl font-serif font-bold leading-tight mb-6 max-w-5xl"
+        >
+          <span className="text-white">Your </span>
+          <span style={{
+            background: 'linear-gradient(135deg, #D4AF37 0%, #f0d060 40%, #a855f7 70%, #D4AF37 100%)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+            backgroundSize: '200% auto', animation: 'shimmerText 4s linear infinite'
+          }}>
+            Graduation
+          </span>
+          <br />
+          <span className="text-white">Awaits.</span>
+        </motion.h1>
 
-          <p className="text-lg sm:text-xl text-white/50 max-w-2xl mx-auto mb-12 leading-relaxed">
-            A premium immersive virtual graduation experience. Step into the 3D auditorium,
-            create your avatar, and celebrate this milestone together — wherever you are in the world.
-          </p>
+        {/* Sub */}
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
+          className="text-base sm:text-lg text-white/40 max-w-xl mx-auto mb-12 leading-relaxed">
+          Step into a breathtaking 3D virtual hall, create your avatar, watch the live ceremony,
+          and celebrate this milestone — wherever you are in the world.
+        </motion.p>
 
-          {/* Countdown */}
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
-            className="flex flex-col items-center gap-4 mb-12">
-            <p className="text-sm text-white/30 uppercase tracking-widest">Ceremony begins in</p>
-            <CountdownTimer />
-          </motion.div>
+        {/* Countdown */}
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.5 }}
+          className="flex flex-col items-center gap-4 mb-12">
+          <p className="text-xs text-white/25 uppercase tracking-[0.2em]">Ceremony begins in</p>
+          <CountdownTimer />
+        </motion.div>
 
-          {/* CTAs */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
-            className="flex flex-wrap items-center justify-center gap-4">
-            <Link href="/lobby"
-              className="px-8 py-4 rounded-2xl bg-gradient-to-r from-gold to-gold-light text-navy font-bold text-lg hover:shadow-2xl hover:shadow-gold/30 transition-all hover:-translate-y-1">
-              🎓 Enter 3D Ceremony
-            </Link>
-            <Link href="/avatar"
-              className="px-8 py-4 rounded-2xl glass text-white font-semibold text-lg hover:bg-white/10 transition-all border border-white/10 hover:border-gold/40">
-              🧑‍🎓 Create Your Avatar
-            </Link>
-          </motion.div>
+        {/* CTAs */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
+          className="flex flex-wrap items-center justify-center gap-4">
+          <Link href="/lobby"
+            className="group relative px-8 py-4 rounded-2xl font-bold text-white text-lg overflow-hidden transition-all hover:scale-105 hover:shadow-2xl"
+            style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 50%, #D4AF37 100%)', boxShadow: '0 0 40px rgba(139,92,246,0.4)' }}>
+            <span className="relative z-10 flex items-center gap-2">
+              🎓 Enter 3D Hall
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </span>
+          </Link>
+          <Link href="/avatar"
+            className="px-8 py-4 rounded-2xl font-semibold text-white text-lg border transition-all hover:scale-105"
+            style={{ background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(212,175,55,0.3)', backdropFilter: 'blur(12px)' }}>
+            🧑‍🎓 Create Avatar
+          </Link>
+        </motion.div>
+
+        {/* Trust strip */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9 }}
+          className="flex flex-wrap items-center justify-center gap-6 mt-14 text-xs text-white/20">
+          {['🎥 Live BigBlueButton Stream', '🌍 Accessible Worldwide', '📸 Photo Booth', '🤝 Networking Rooms', '🏆 Graduate Profiles'].map(f => (
+            <span key={f}>{f}</span>
+          ))}
         </motion.div>
       </section>
 
-      {/* Features */}
-      <section className="relative z-10 max-w-7xl mx-auto px-4 pb-24">
-        <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-10">
-          <h2 className="text-3xl sm:text-4xl font-serif font-bold text-white mb-3">Everything in one place</h2>
-          <p className="text-white/40">A complete premium virtual graduation experience</p>
-        </motion.div>
-
+      {/* ── Feature strip ── */}
+      <section className="relative z-10 max-w-6xl mx-auto px-4 pb-24">
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {features.map((f, i) => (
+          {[
+            { emoji: '🏛️', title: '3D Virtual Hall', desc: 'Walk through a stunning graduation hall. Navigate with WASD, look around, click doors to enter rooms.', color: '#7c3aed' },
+            { emoji: '🎓', title: 'Avatar System', desc: 'Create your avatar with your photo. Graduates get an automatic gown. Walk on stage and deliver your speech.', color: '#D4AF37' },
+            { emoji: '📡', title: 'Live BBB Stream', desc: 'Watch the full ceremony on a giant screen inside the 3D auditorium via BigBlueButton.', color: '#ec4899' },
+            { emoji: '👥', title: 'Graduate Profiles', desc: 'Browse every graduate, read their story, leave congratulatory messages and view their digital certificate.', color: '#3b82f6' },
+            { emoji: '📸', title: 'Photo Booth', desc: 'Take graduation photos with custom frames and stickers, download and share instantly.', color: '#10b981' },
+            { emoji: '🤝', title: 'Networking Lounge', desc: 'Join themed virtual tables and connect with graduates, faculty, and guests via BBB breakouts.', color: '#f59e0b' },
+          ].map((f, i) => (
             <motion.div key={f.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }} transition={{ delay: i * 0.07 }} whileHover={{ y: -4 }}>
-              <Link href={f.href}>
-                <div className="glass rounded-2xl p-6 border border-white/5 hover:border-gold/30 transition-all group h-full">
-                  <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${f.color} flex items-center justify-center mb-4`}>
-                    <f.icon className="w-5 h-5 text-white" />
-                  </div>
-                  <h3 className="text-base font-semibold text-white group-hover:text-gold transition-colors mb-1">{f.title}</h3>
-                  <p className="text-sm text-white/40 leading-relaxed">{f.desc}</p>
-                </div>
-              </Link>
+              viewport={{ once: true }} transition={{ delay: i * 0.07 }}
+              className="rounded-2xl p-6 border transition-all hover:-translate-y-1 hover:border-opacity-60 cursor-default"
+              style={{ background: 'rgba(255,255,255,0.03)', borderColor: `${f.color}25`, backdropFilter: 'blur(10px)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = `${f.color}60`)}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = `${f.color}25`)}>
+              <div className="text-3xl mb-3">{f.emoji}</div>
+              <h3 className="font-semibold text-white mb-1.5 text-sm">{f.title}</h3>
+              <p className="text-xs text-white/35 leading-relaxed">{f.desc}</p>
             </motion.div>
           ))}
         </div>
       </section>
 
-      {/* Sponsors */}
-      <section className="relative z-10 border-t border-white/5 py-10 px-4">
+      {/* Sponsor strip */}
+      <section className="relative z-10 border-t py-8 px-4" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
         <div className="max-w-5xl mx-auto text-center">
-          <p className="text-xs text-white/20 uppercase tracking-widest mb-6">Proud sponsors</p>
+          <p className="text-xs text-white/15 uppercase tracking-widest mb-5">Proud sponsors</p>
           <div className="flex flex-wrap items-center justify-center gap-8">
-            {['TechCorp Global', 'Meridian Bank', 'HealthFirst', 'InnoVentures', 'GreenFuture', 'EduTech'].map((s) => (
-              <div key={s} className="text-white/20 hover:text-white/40 transition-colors font-semibold text-sm uppercase tracking-wider cursor-pointer">{s}</div>
+            {['TechCorp Global', 'Meridian Bank', 'HealthFirst', 'InnoVentures', 'GreenFuture', 'EduTech'].map(s => (
+              <span key={s} className="text-white/15 hover:text-white/35 transition-colors text-xs font-semibold uppercase tracking-wider cursor-pointer">{s}</span>
             ))}
           </div>
         </div>
       </section>
 
-      <footer className="relative z-10 border-t border-white/5 py-5 px-4 text-center text-xs text-white/20">
+      <footer className="relative z-10 py-5 px-4 text-center text-xs text-white/15" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
         © {YEAR} {UNI_NAME} · Virtual Graduation Ceremony
       </footer>
+
+      <style jsx global>{`
+        @keyframes shimmerText {
+          0% { background-position: 0% center; }
+          100% { background-position: 200% center; }
+        }
+      `}</style>
     </div>
   )
 }
