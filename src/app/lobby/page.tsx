@@ -1,5 +1,8 @@
 'use client'
 import dynamic from 'next/dynamic'
+import { useState, useEffect } from 'react'
+import { useGraduationStore } from '../../store/useGraduationStore'
+import AvatarOnboarding from '../../components/AvatarOnboarding'
 
 const MetaverseLobby = dynamic(() => import('../../components/MetaverseLobby'), {
   ssr: false,
@@ -17,5 +20,20 @@ const MetaverseLobby = dynamic(() => import('../../components/MetaverseLobby'), 
 })
 
 export default function LobbyPage() {
-  return <MetaverseLobby />
+  const myName = useGraduationStore(s => s.myName)
+  const [showOnboarding, setShowOnboarding] = useState(false)
+
+  useEffect(() => {
+    // Show onboarding only if name hasn't been set yet
+    if (!myName) setShowOnboarding(true)
+  }, [myName])
+
+  return (
+    <>
+      {showOnboarding && (
+        <AvatarOnboarding onComplete={() => setShowOnboarding(false)} />
+      )}
+      <MetaverseLobby />
+    </>
+  )
 }
