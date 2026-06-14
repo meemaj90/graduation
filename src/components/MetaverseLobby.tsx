@@ -5,520 +5,531 @@ import { useRouter } from 'next/navigation'
 import { useGraduationStore } from '../store/useGraduationStore'
 import AvatarDisplay from './AvatarDisplay'
 
-// ── Room hotspots ────────────────────────────────────────────────────────────
 const ROOMS = [
-  { id: 'auditorium', label: 'Ceremony Hall',  emoji: '🎓', href: '/auditorium',  color: '#D4AF37', desc: 'Live BBB stream + stage' },
-  { id: 'graduates',  label: 'Graduate Wall',  emoji: '👥', href: '/graduates',   color: '#60a5fa', desc: 'Browse all graduates' },
-  { id: 'networking', label: 'Family Lounge',  emoji: '🤝', href: '/networking',  color: '#a78bfa', desc: 'Meet & celebrate' },
-  { id: 'photobooth', label: 'Photo Booth',    emoji: '📸', href: '/photo-booth', color: '#f472b6', desc: 'Take your photos' },
-  { id: 'programme',  label: 'Programme',      emoji: '📋', href: '/program',     color: '#34d399', desc: 'Today\'s schedule' },
-  { id: 'avatar',     label: 'My Avatar',      emoji: '🧑‍🎓', href: '/avatar',     color: '#fbbf24', desc: 'Customise your look' },
+  { id: 'auditorium', label: 'Ceremony Hall',  emoji: '🎓', href: '/auditorium',  color: '#1a3a8f', desc: 'Live ceremony & BBB stream' },
+  { id: 'graduates',  label: 'Graduate Wall',  emoji: '👥', href: '/graduates',   color: '#1a3a8f', desc: 'Browse all graduates' },
+  { id: 'networking', label: 'Family Lounge',  emoji: '🤝', href: '/networking',  color: '#1a3a8f', desc: 'Meet & celebrate together' },
+  { id: 'photobooth', label: 'Photo Booth',    emoji: '📸', href: '/photo-booth', color: '#1a3a8f', desc: 'Take your graduation photos' },
+  { id: 'programme',  label: 'Programme',      emoji: '📋', href: '/program',     color: '#1a3a8f', desc: "Today's schedule" },
+  { id: 'avatar',     label: 'My Avatar',      emoji: '🧑‍🎓', href: '/avatar',     color: '#D4AF37', desc: 'Customise your avatar' },
 ]
 
-// ── Isometric hall painter ────────────────────────────────────────────────────
-// Elevated 3/4 perspective looking at the hall from upper-right — vFairs style
-// Returns hotspot screen positions for each room
-function paintHall(
-  ctx: CanvasRenderingContext2D,
-  W: number,
-  H: number
-): Record<string, { x: number; y: number }> {
-
+// ── Lobby painter — bright modern entrance hall (image 2 style) ──────────────
+function paintLobby(ctx: CanvasRenderingContext2D, W: number, H: number) {
   ctx.clearRect(0, 0, W, H)
 
-  // ── Isometric helpers ──────────────────────────────────────────────────────
-  // Map 3D coords [right, up, depth] → screen [x, y]
-  // We use an oblique/cabinet projection (simple but looks great)
-  const OX = W * 0.18   // origin screen X (left wall bottom)
-  const OY = H * 0.82   // origin screen Y (floor front)
-  const RX = W * 0.62   // right axis screen X extent
-  const RY = H * -0.04  // right axis screen Y (slight downward)
-  const DX = W * -0.01  // depth axis X (going back)
-  const DY = H * -0.42  // depth axis Y (going up)
-  const UX = W * 0.00   // up axis X
-  const UY = H * -0.22  // up axis Y (going up on screen)
+  const cx = W / 2
+  const vy = H * 0.44  // vanishing point Y
+  const vx = cx         // vanishing point X (centre)
 
-  const p = (r: number, d: number, u: number): [number, number] => [
-    OX + r * RX + d * DX + u * UX,
-    OY + r * RY + d * DY + u * UY,
+  // Helper: point on a line from vanishing point
+  const vLine = (edgeX: number, edgeY: number, t: number): [number, number] => [
+    vx + (edgeX - vx) * t,
+    vy + (edgeY - vy) * t,
   ]
 
-  const poly = (pts: [number, number][], fill: string | CanvasGradient, stroke?: string, lw = 1) => {
-    ctx.beginPath()
-    pts.forEach(([x, y], i) => i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y))
-    ctx.closePath()
-    ctx.fillStyle = fill; ctx.fill()
-    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw; ctx.stroke() }
-  }
+  // ── Ceiling ────────────────────────────────────────────────────────────────
+  const ceilGrad = ctx.createLinearGradient(0, 0, 0, vy)
+  ceilGrad.addColorStop(0, '#e8e8ee')
+  ceilGrad.addColorStop(1, '#f0f0f5')
+  ctx.fillStyle = ceilGrad
+  ctx.beginPath()
+  ctx.moveTo(0, 0); ctx.lineTo(W, 0)
+  ctx.lineTo(W, vy); ctx.lineTo(0, vy)
+  ctx.fill()
 
-  const line = (x0: number, y0: number, x1: number, y1: number, col: string, lw = 1) => {
-    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1)
-    ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.stroke()
-  }
-
-  // Hall dimensions in "world" units
-  const W3 = 1   // width (right axis, 0→1)
-  const D3 = 1   // depth (depth axis, 0→1)
-  const H3 = 0.7 // height (up axis)
-
-  // Corners
-  const fl = [p(0,0,0), p(1,0,0), p(1,1,0), p(0,1,0)] // floor quad
-
-  // ── Deep space background ──────────────────────────────────────────────────
-  const bg = ctx.createRadialGradient(W*0.5, H*0.35, 50, W*0.5, H*0.35, W*0.8)
-  bg.addColorStop(0, '#0d0a2e'); bg.addColorStop(0.5, '#080618'); bg.addColorStop(1, '#030410')
-  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H)
-
-  // ── Ceiling ───────────────────────────────────────────────────────────────
-  const ceil = [p(0,0,H3), p(1,0,H3), p(1,1,H3), p(0,1,H3)]
-  const ceilG = ctx.createLinearGradient(...p(0,0,H3), ...p(0,1,H3))
-  ceilG.addColorStop(0, '#0a0c24'); ceilG.addColorStop(1, '#070918')
-  poly(ceil, ceilG)
-
-  // Ceiling gold trim lines
-  ctx.strokeStyle = 'rgba(212,175,55,0.2)'; ctx.lineWidth = 1
-  for (let i = 1; i <= 3; i++) {
-    const t = i / 4
-    const a = p(t, 0, H3), b = p(t, 1, H3)
-    line(a[0], a[1], b[0], b[1], 'rgba(212,175,55,0.15)')
-    const c = p(0, t, H3), d = p(1, t, H3)
-    line(c[0], c[1], d[0], d[1], 'rgba(212,175,55,0.15)')
-  }
-
-  // Ceiling light panels (coffers)
-  ;[0.25, 0.5, 0.75].forEach(r => {
-    ;[0.25, 0.75].forEach(d => {
-      const c0 = p(r-0.08, d-0.1, H3-0.01), c1 = p(r+0.08, d-0.1, H3-0.01)
-      const c2 = p(r+0.08, d+0.1, H3-0.01), c3 = p(r-0.08, d+0.1, H3-0.01)
-      poly([c0,c1,c2,c3], 'rgba(255,220,100,0.08)')
-      ctx.strokeStyle = 'rgba(212,175,55,0.25)'; ctx.lineWidth = 0.8
+  // Recessed ceiling panels
+  const panelCols = 4, panelRows = 3
+  for (let row = 0; row < panelRows; row++) {
+    for (let col = 0; col < panelCols; col++) {
+      const t0 = 0.08 + row * 0.28, t1 = t0 + 0.22
+      const x0 = W * (0.18 + col * 0.21), x1 = x0 + W * 0.17
+      const [px0, py0] = vLine(x0, 0, t0)
+      const [px1, py1] = vLine(x1, 0, t0)
+      const [px2, py2] = vLine(x1, 0, t1)
+      const [px3, py3] = vLine(x0, 0, t1)
+      ctx.fillStyle = 'rgba(220,220,230,0.6)'
+      ctx.beginPath(); ctx.moveTo(px0,py0); ctx.lineTo(px1,py1); ctx.lineTo(px2,py2); ctx.lineTo(px3,py3); ctx.closePath(); ctx.fill()
+      ctx.strokeStyle = 'rgba(180,180,195,0.7)'; ctx.lineWidth = 0.8
       ctx.stroke()
-      // Light glow
-      const [lx, ly] = p(r, d, H3)
-      const lg = ctx.createRadialGradient(lx, ly, 0, lx, ly, 55)
-      lg.addColorStop(0, 'rgba(255,220,80,0.28)'); lg.addColorStop(1, 'rgba(255,200,60,0)')
-      ctx.fillStyle = lg; ctx.fillRect(lx-55, ly-30, 110, 70)
-      ctx.fillStyle = 'rgba(255,248,180,0.95)'
-      ctx.beginPath(); ctx.arc(lx, ly+8, 4, 0, Math.PI*2); ctx.fill()
-    })
-  })
 
-  // ── Back wall ─────────────────────────────────────────────────────────────
-  const bwPts = [p(0,1,0), p(1,1,0), p(1,1,H3), p(0,1,H3)]
-  const bwG = ctx.createLinearGradient(...p(0,1,H3), ...p(0,1,0))
-  bwG.addColorStop(0, '#060820'); bwG.addColorStop(1, '#0a0d28')
-  poly(bwPts, bwG)
-  // Back wall gold trim
-  ctx.strokeStyle = 'rgba(212,175,55,0.4)'; ctx.lineWidth = 1.5
-  const [btl] = [p(0,1,H3)]; const btr = p(1,1,H3)
-  line(bwPts[0][0], bwPts[0][1], bwPts[3][0], bwPts[3][1], 'rgba(212,175,55,0.4)', 1.5)
-  line(bwPts[1][0], bwPts[1][1], bwPts[2][0], bwPts[2][1], 'rgba(212,175,55,0.4)', 1.5)
-  line(bwPts[2][0], bwPts[2][1], bwPts[3][0], bwPts[3][1], 'rgba(212,175,55,0.4)', 1.5)
+      // Recessed light strips inside some panels
+      if (row < 2) {
+        const lg = ctx.createLinearGradient(px0, py0, px1, py1)
+        lg.addColorStop(0,'rgba(255,255,220,0)'); lg.addColorStop(0.5,'rgba(255,255,200,0.55)'); lg.addColorStop(1,'rgba(255,255,220,0)')
+        ctx.fillStyle = lg
+        const midY = (py0+py2)/2 - 2
+        ctx.fillRect(Math.min(px0,px1), midY, Math.abs(px1-px0), 4)
 
-  // ── Right wall ────────────────────────────────────────────────────────────
-  const rwPts = [p(1,0,0), p(1,1,0), p(1,1,H3), p(1,0,H3)]
-  const rwG = ctx.createLinearGradient(rwPts[0][0], rwPts[0][1], rwPts[1][0], rwPts[1][1])
-  rwG.addColorStop(0, '#0a0d26'); rwG.addColorStop(1, '#080b20')
-  poly(rwPts, rwG)
-  // Right wall pilasters
-  ;[0.2, 0.5, 0.8].forEach(d => {
-    const pl = [p(1,d-0.03,0), p(1,d+0.03,0), p(1,d+0.03,H3*0.9), p(1,d-0.03,H3*0.9)]
-    poly(pl, '#0e1232', 'rgba(212,175,55,0.3)', 0.8)
-    // Sconce
-    const [sx, sy] = p(1, d, H3*0.5)
-    const sg = ctx.createRadialGradient(sx-10, sy, 0, sx-10, sy, 50)
-    sg.addColorStop(0, 'rgba(255,200,80,0.4)'); sg.addColorStop(1, 'transparent')
-    ctx.fillStyle = sg; ctx.fillRect(sx-60, sy-50, 90, 100)
-    ctx.fillStyle = 'rgba(255,240,160,0.9)'
-    ctx.beginPath(); ctx.arc(sx-12, sy, 3.5, 0, Math.PI*2); ctx.fill()
-  })
-
-  // ── Left wall ─────────────────────────────────────────────────────────────
-  const lwPts = [p(0,0,0), p(0,1,0), p(0,1,H3), p(0,0,H3)]
-  const lwG = ctx.createLinearGradient(lwPts[0][0], lwPts[0][1], lwPts[1][0], lwPts[1][1])
-  lwG.addColorStop(0, '#0e1130'); lwG.addColorStop(1, '#0a0e24')
-  poly(lwPts, lwG)
-  // Left wall pilasters
-  ;[0.2, 0.5, 0.8].forEach(d => {
-    const pl = [p(0,d-0.03,0), p(0,d+0.03,0), p(0,d+0.03,H3*0.9), p(0,d-0.03,H3*0.9)]
-    poly(pl, '#0e1232', 'rgba(212,175,55,0.3)', 0.8)
-    const [sx, sy] = p(0, d, H3*0.5)
-    const sg = ctx.createRadialGradient(sx+10, sy, 0, sx+10, sy, 50)
-    sg.addColorStop(0, 'rgba(255,200,80,0.4)'); sg.addColorStop(1, 'transparent')
-    ctx.fillStyle = sg; ctx.fillRect(sx-30, sy-50, 90, 100)
-    ctx.fillStyle = 'rgba(255,240,160,0.9)'
-    ctx.beginPath(); ctx.arc(sx+12, sy, 3.5, 0, Math.PI*2); ctx.fill()
-  })
-
-  // ── Floor ─────────────────────────────────────────────────────────────────
-  const floorG = ctx.createLinearGradient(fl[0][0], fl[0][1], fl[2][0], fl[2][1])
-  floorG.addColorStop(0, '#0c0e28'); floorG.addColorStop(0.5, '#0f1230'); floorG.addColorStop(1, '#090b20')
-  poly(fl, floorG)
-
-  // Floor grid
-  for (let i = 1; i <= 7; i++) {
-    const t = i / 8
-    const a = p(t,0,0), b = p(t,1,0)
-    line(a[0],a[1],b[0],b[1], `rgba(212,175,55,${i%2===0?0.1:0.06})`)
-    const c = p(0,t,0), d = p(1,t,0)
-    line(c[0],c[1],d[0],d[1], `rgba(212,175,55,${i%2===0?0.1:0.06})`)
-  }
-
-  // Centre carpet (from front to stage)
-  const carpet = [p(0.43,0,0.01), p(0.57,0,0.01), p(0.57,1,0.01), p(0.43,1,0.01)]
-  const carpG = ctx.createLinearGradient(carpet[0][0],carpet[0][1],carpet[2][0],carpet[2][1])
-  carpG.addColorStop(0,'rgba(100,5,5,0.7)'); carpG.addColorStop(1,'rgba(80,3,3,0.9)')
-  poly(carpet, carpG)
-  // Gold carpet trim
-  for (const xr of [0.43, 0.57]) {
-    const a = p(xr,0,0.015), b = p(xr,1,0.015)
-    line(a[0],a[1],b[0],b[1],'rgba(212,175,55,0.65)',1.5)
-  }
-
-  // ── Audience seats ────────────────────────────────────────────────────────
-  const seatColors = ['#1a1050','#1e1460','#180e48','#22185a']
-  const rows = 6, cols = 10
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < cols; col++) {
-      // Two blocks of seats either side of centre aisle
-      for (const side of [-1, 1]) {
-        if (side === -1 && col > 4) continue
-        if (side === 1 && col < 5) continue
-        const dr = side === -1 ? 0.06 + col * 0.08 : 0.56 + (col - 5) * 0.08
-        const dd = 0.08 + row * 0.14
-        if (dd > 0.95 || dr > 0.92 || dr < 0.04) continue
-
-        const sc = seatColors[(row+col)%4]
-        // Seat back
-        const sb = [p(dr,dd,0.06), p(dr+0.065,dd,0.06), p(dr+0.065,dd+0.001,0.12), p(dr,dd+0.001,0.12)]
-        poly(sb, sc, 'rgba(0,0,0,0.3)', 0.4)
-        // Seat cushion
-        const scush = [p(dr,dd,0.06), p(dr+0.065,dd,0.06), p(dr+0.065,dd+0.085,0.06), p(dr,dd+0.085,0.06)]
-        poly(scush, side===-1 ? '#1a1055':'#1a1055', 'rgba(0,0,0,0.2)', 0.3)
-
-        // Person head (graduates in gowns!)
-        const [hx, hy] = p(dr+0.033, dd+0.04, 0.14)
-        const headCol = `hsl(${15+(row*37+col*13)%40},38%,${45+(col%3)*9}%)`
-        ctx.fillStyle = headCol
-        ctx.beginPath(); ctx.arc(hx, hy, 4, 0, Math.PI*2); ctx.fill()
-        // Tiny graduation cap on some
-        if ((row+col)%3===0) {
-          ctx.fillStyle='#1a237e'
-          ctx.fillRect(hx-4, hy-6, 8, 2)
-          ctx.fillStyle='rgba(212,175,55,0.9)'
-          ctx.beginPath(); ctx.arc(hx, hy-5, 2, 0, Math.PI*2); ctx.fill()
-        }
+        // Light glow on floor
+        const floorGlowX = (px0+px1)/2
+        const floorGlowY = H - (H-vy)*(0.08+row*0.28) + 20
+        const fg = ctx.createRadialGradient(floorGlowX, H*0.7, 0, floorGlowX, H*0.7, 80)
+        fg.addColorStop(0,'rgba(240,240,255,0.15)'); fg.addColorStop(1,'transparent')
+        ctx.fillStyle = fg; ctx.fillRect(floorGlowX-80, H*0.55, 160, H*0.45)
       }
     }
   }
 
-  // ── Stage ─────────────────────────────────────────────────────────────────
-  // Stage platform (raised)
-  const stageFloor = [p(0.1,0.88,0.04), p(0.9,0.88,0.04), p(0.9,1.0,0.04), p(0.1,1.0,0.04)]
-  const stgG = ctx.createLinearGradient(stageFloor[0][0], stageFloor[0][1], stageFloor[2][0], stageFloor[2][1])
-  stgG.addColorStop(0,'#0e1535'); stgG.addColorStop(1,'#0a1028')
-  poly(stageFloor, stgG)
-  // Stage front edge gold
-  const stageFront = [p(0.1,0.88,0), p(0.9,0.88,0), p(0.9,0.88,0.04), p(0.1,0.88,0.04)]
-  poly(stageFront, '#1a1c35', 'rgba(212,175,55,0.8)', 1)
-  const [sfl0x,sfl0y] = p(0.1,0.88,0.04), [sfl1x,sfl1y] = p(0.9,0.88,0.04)
-  line(sfl0x,sfl0y,sfl1x,sfl1y,'rgba(212,175,55,0.9)',2)
+  // ── Floor ──────────────────────────────────────────────────────────────────
+  // Terrazzo / polished marble — light gray with blue/gray flecks
+  const floorGrad = ctx.createLinearGradient(0, vy, 0, H)
+  floorGrad.addColorStop(0, '#d8d9e0')
+  floorGrad.addColorStop(0.3, '#cfd0d9')
+  floorGrad.addColorStop(1, '#c8c9d2')
+  ctx.fillStyle = floorGrad
+  ctx.fillRect(0, vy, W, H - vy)
 
-  // Stage spotlight glow on floor
-  const [spx, spy] = p(0.5, 0.97, 0.045)
-  const spg = ctx.createRadialGradient(spx, spy, 0, spx, spy, 90)
-  spg.addColorStop(0,'rgba(255,240,160,0.35)'); spg.addColorStop(0.4,'rgba(255,200,80,0.1)'); spg.addColorStop(1,'transparent')
-  ctx.fillStyle = spg; ctx.fillRect(spx-90, spy-40, 180, 80)
+  // Terrazzo flecks
+  for (let i = 0; i < 280; i++) {
+    const fx = Math.random() * W
+    const fy = vy + Math.random() * (H - vy)
+    const size = Math.random() * 3 + 0.5
+    const gray = Math.round(140 + Math.random() * 60)
+    const isBlue = Math.random() < 0.12
+    ctx.fillStyle = isBlue ? `rgba(80,100,180,0.25)` : `rgba(${gray},${gray},${gray+5},0.4)`
+    ctx.beginPath(); ctx.arc(fx, fy, size, 0, Math.PI*2); ctx.fill()
+  }
 
-  // Podium
-  const pod = [p(0.48,0.94,0.04), p(0.52,0.94,0.04), p(0.52,0.98,0.04), p(0.48,0.98,0.04)]
-  poly(pod, '#0a0c22', 'rgba(212,175,55,0.7)', 1)
-  const podTop = [p(0.48,0.94,0.1), p(0.52,0.94,0.1), p(0.52,0.98,0.1), p(0.48,0.98,0.1)]
-  poly(podTop, '#D4AF37', undefined)
-  const podFront = [p(0.48,0.94,0.04), p(0.52,0.94,0.04), p(0.52,0.94,0.1), p(0.48,0.94,0.1)]
-  const pfG = ctx.createLinearGradient(podFront[0][0],podFront[0][1],podFront[2][0],podFront[2][1])
-  pfG.addColorStop(0,'rgba(10,10,35,0.9)'); pfG.addColorStop(1,'rgba(212,175,55,0.3)')
-  poly(podFront, pfG, 'rgba(212,175,55,0.6)', 0.8)
+  // Floor reflection strip (glossy)
+  const reflGrad = ctx.createLinearGradient(0, vy, 0, vy + (H-vy)*0.35)
+  reflGrad.addColorStop(0,'rgba(255,255,255,0.45)'); reflGrad.addColorStop(1,'rgba(255,255,255,0)')
+  ctx.fillStyle = reflGrad; ctx.fillRect(0, vy, W, (H-vy)*0.35)
 
-  // Big screen on back wall
-  const scrL = 0.18, scrR = 0.82, scrB = 0.12, scrT = 0.58
-  const scr = [p(scrL,1,scrB), p(scrR,1,scrB), p(scrR,1,scrT), p(scrL,1,scrT)]
-  // Screen dark fill + glow
-  poly(scr, '#000814', 'rgba(212,175,55,0.6)', 1.5)
-  const [scrCx, scrCy] = p(0.5, 1, (scrB+scrT)/2)
-  const scrGlow = ctx.createRadialGradient(scrCx, scrCy-10, 10, scrCx, scrCy-10, 80)
-  scrGlow.addColorStop(0,'rgba(40,80,220,0.25)'); scrGlow.addColorStop(1,'transparent')
-  ctx.fillStyle = scrGlow; ctx.fillRect(scrCx-80, scrCy-70, 160, 100)
+  // Floor grid lines (perspective)
+  ctx.strokeStyle = 'rgba(160,162,175,0.35)'; ctx.lineWidth = 0.8
+  for (let i = 1; i <= 8; i++) {
+    const t = i / 9
+    const y = vy + (H - vy) * t
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke()
+  }
+  // Vertical convergence lines
+  for (let i = 0; i <= 5; i++) {
+    const x = W * (i / 5)
+    ctx.beginPath(); ctx.moveTo(vx + (x-vx)*0.05, vy+2); ctx.lineTo(x, H); ctx.stroke()
+  }
 
-  // Screen content preview (blue gradient to simulate video)
-  const scrGrad = ctx.createLinearGradient(scr[0][0], scr[0][1], scr[2][0], scr[2][1])
-  scrGrad.addColorStop(0,'rgba(10,20,80,0.9)'); scrGrad.addColorStop(0.5,'rgba(5,12,50,0.95)'); scrGrad.addColorStop(1,'rgba(2,8,30,0.9)')
-  poly(scr, scrGrad)
+  // Centre aisle highlight
+  const aisleGrad = ctx.createLinearGradient(0, vy, 0, H)
+  aisleGrad.addColorStop(0,'rgba(200,205,225,0.5)'); aisleGrad.addColorStop(1,'rgba(190,195,215,0)')
+  ctx.fillStyle = aisleGrad
+  ctx.beginPath()
+  ctx.moveTo(cx - 8, vy); ctx.lineTo(cx + 8, vy); ctx.lineTo(cx + W*0.22, H); ctx.lineTo(cx - W*0.22, H)
+  ctx.fill()
 
-  // Screen label
-  ctx.save(); ctx.textAlign='center'
-  ctx.fillStyle = 'rgba(255,255,255,0.35)'
-  ctx.font = `bold ${Math.round(W*0.012)}px Georgia, serif`
-  ctx.fillText('🎓 LIVE CEREMONY', scrCx, scrCy - 6)
-  ctx.font = `${Math.round(W*0.008)}px Georgia, serif`
-  ctx.fillStyle = 'rgba(212,175,55,0.5)'
-  ctx.fillText('Nextora School · Class of 2026', scrCx, scrCy + 10)
-  ctx.restore()
+  // ── Left wall ──────────────────────────────────────────────────────────────
+  const lwGrad = ctx.createLinearGradient(0, 0, W*0.18, 0)
+  lwGrad.addColorStop(0,'#b8bcc8'); lwGrad.addColorStop(1,'#d5d7e0')
+  ctx.fillStyle = lwGrad
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(W*0.18, vy); ctx.lineTo(W*0.12, H); ctx.lineTo(0,H); ctx.closePath(); ctx.fill()
 
-  // Curtains on back wall
-  for (const side of [
-    { x0: 0.04, x1: scrL - 0.01 },
-    { x0: scrR + 0.01, x1: 0.96 },
-  ]) {
-    const folds = 6
-    for (let i = 0; i < folds; i++) {
-      const t = i / (folds-1)
-      const xr = side.x0 + (side.x1 - side.x0) * t
-      const b = 0.28 + (i%2)*0.15
-      const cpts = [p(xr,1,scrB-0.02), p(xr+0.02,1,scrB-0.02), p(xr+0.02,1,H3), p(xr,1,H3)]
-      poly(cpts, `rgb(${Math.round(b*105)},${Math.round(b*5)},${Math.round(b*5)})`)
+  // ── Right wall ─────────────────────────────────────────────────────────────
+  const rwGrad = ctx.createLinearGradient(W, 0, W*0.82, 0)
+  rwGrad.addColorStop(0,'#b8bcc8'); rwGrad.addColorStop(1,'#d5d7e0')
+  ctx.fillStyle = rwGrad
+  ctx.beginPath(); ctx.moveTo(W,0); ctx.lineTo(W*0.82, vy); ctx.lineTo(W*0.88, H); ctx.lineTo(W,H); ctx.closePath(); ctx.fill()
+
+  // Wall trim lines
+  ctx.strokeStyle = 'rgba(150,152,168,0.5)'; ctx.lineWidth = 1
+  ctx.beginPath(); ctx.moveTo(0, H*0.05); ctx.lineTo(W*0.18, vy*0.12); ctx.stroke()
+  ctx.beginPath(); ctx.moveTo(W, H*0.05); ctx.lineTo(W*0.82, vy*0.12); ctx.stroke()
+
+  // ── Back wall ──────────────────────────────────────────────────────────────
+  const bwGrad = ctx.createLinearGradient(0, 0, 0, vy)
+  bwGrad.addColorStop(0,'#e2e3ea'); bwGrad.addColorStop(1,'#dddee6')
+  ctx.fillStyle = bwGrad
+  ctx.beginPath()
+  ctx.moveTo(W*0.18, vy); ctx.lineTo(W*0.82, vy)
+  ctx.lineTo(W*0.82, 0); ctx.lineTo(W*0.18, 0)
+  ctx.closePath(); ctx.fill()
+
+  // Back wall windows (natural light)
+  const winW = W * 0.13, winH = vy * 0.48
+  const winY = vy * 0.3
+  ;[W*0.28, W*0.44, W*0.59, W*0.72 - winW*0.3].forEach((wx, i) => {
+    if (i === 1 || i === 2) {
+      // Centre windows (where door is)
+      const wg = ctx.createLinearGradient(wx, winY, wx, winY+winH)
+      wg.addColorStop(0,'rgba(180,210,255,0.9)'); wg.addColorStop(1,'rgba(220,235,255,0.7)')
+      ctx.fillStyle = wg; ctx.fillRect(wx, winY, winW*0.5, winH*1.1)
+      ctx.strokeStyle='rgba(140,160,200,0.6)'; ctx.lineWidth=1
+      ctx.strokeRect(wx, winY, winW*0.5, winH*1.1)
+      // Light spill
+      const lg2 = ctx.createRadialGradient(wx+winW*0.25, vy, 0, wx+winW*0.25, vy, 60)
+      lg2.addColorStop(0,'rgba(200,220,255,0.3)'); lg2.addColorStop(1,'transparent')
+      ctx.fillStyle = lg2; ctx.fillRect(wx-20, vy-5, winW*0.5+40, 80)
     }
-  }
-  // Valance
-  const val = [p(0.04,1,H3*0.82), p(0.96,1,H3*0.82), p(0.96,1,H3), p(0.04,1,H3)]
-  poly(val, '#5a0a0a', 'rgba(212,175,55,0.6)', 1)
-  const [vtx, vty] = p(0.04,1,H3*0.82), [vbx, vby] = p(0.96,1,H3*0.82)
-  line(vtx,vty,vbx,vby,'rgba(212,175,55,0.7)',1.5)
-
-  // Stage spotlights (from ceiling)
-  ;[[0.35,0.6],[0.5,0.6],[0.65,0.6]].forEach(([r,d]) => {
-    const [sx,sy] = p(r,1,H3*0.95), [tx,ty] = p(r,0.95,0.08)
-    const bg2 = ctx.createLinearGradient(sx,sy,tx,ty)
-    bg2.addColorStop(0,'rgba(255,240,180,0.22)'); bg2.addColorStop(1,'rgba(255,240,180,0)')
-    ctx.fillStyle = bg2
-    ctx.beginPath(); ctx.moveTo(sx-4,sy); ctx.lineTo(sx+4,sy); ctx.lineTo(tx+18,ty); ctx.lineTo(tx-18,ty); ctx.closePath(); ctx.fill()
   })
 
-  // ── Banners hanging on left wall ──────────────────────────────────────────
-  ;[0.25, 0.55, 0.8].forEach((d, i) => {
-    const bp = [p(0.02,d,H3*0.3), p(0.02,d+0.12,H3*0.3), p(0.02,d+0.12,H3*0.75), p(0.02,d,H3*0.75)]
-    const bannerG = ctx.createLinearGradient(bp[0][0],bp[0][1],bp[2][0],bp[2][1])
-    bannerG.addColorStop(0,'#1a0a2e'); bannerG.addColorStop(1,'#120820')
-    poly(bp, bannerG, 'rgba(212,175,55,0.5)', 0.8)
-    const [bcx,bcy] = p(0.02, d+0.06, H3*0.52)
-    ctx.fillStyle='rgba(212,175,55,0.7)'; ctx.textAlign='center'
-    ctx.font=`bold ${Math.round(W*0.007)}px Georgia, serif`
-    ctx.save(); ctx.fillText(['2026','🎓','K-12'][i], bcx, bcy); ctx.restore()
-  })
-
-  // ── Floating confetti ────────────────────────────────────────────────────
-  // Pre-baked confetti so it looks alive
-  const confettiColors = ['#D4AF37','#7c3aed','#ec4899','#60a5fa','#34d399','#f97316']
-  for (let i = 0; i < 60; i++) {
-    const r = 0.1 + (i * 0.137) % 0.85
-    const d = 0.05 + (i * 0.211) % 0.9
-    const u = 0.1 + (i * 0.317) % (H3 * 0.85)
-    const [cx2, cy2] = p(r, d, u)
-    if (cx2 < 0 || cx2 > W || cy2 < 0 || cy2 > H) continue
-    ctx.fillStyle = confettiColors[i % confettiColors.length]
-    ctx.globalAlpha = 0.45 + (i%3)*0.15
-    const size = 2 + (i%3)
-    ctx.save()
-    ctx.translate(cx2, cy2)
-    ctx.rotate(i * 0.8)
-    ctx.fillRect(-size/2, -size/2, size, size*0.5)
-    ctx.restore()
-    ctx.globalAlpha = 1
+  // Back wall floor-to-ceiling panels (architectural detail)
+  for (let i = 0; i < 5; i++) {
+    const px = W*0.19 + i * (W*0.63/5)
+    ctx.strokeStyle='rgba(160,162,175,0.3)'; ctx.lineWidth=0.6
+    ctx.beginPath(); ctx.moveTo(px, 0); ctx.lineTo(px, vy); ctx.stroke()
   }
 
-  // ── Compute and return hotspot screen positions ───────────────────────────
+  // ── School crest — centre back wall ────────────────────────────────────────
+  const crestX = cx, crestY = vy * 0.5, crestR = Math.min(W, H) * 0.055
+  // Shield shape
+  ctx.fillStyle = '#1a3a8f'
+  ctx.beginPath()
+  ctx.moveTo(crestX, crestY - crestR)
+  ctx.lineTo(crestX + crestR*0.85, crestY - crestR*0.6)
+  ctx.lineTo(crestX + crestR*0.85, crestY + crestR*0.2)
+  ctx.bezierCurveTo(crestX + crestR*0.85, crestY + crestR*0.9, crestX, crestY + crestR*1.1, crestX, crestY + crestR*1.1)
+  ctx.bezierCurveTo(crestX, crestY + crestR*1.1, crestX - crestR*0.85, crestY + crestR*0.9, crestX - crestR*0.85, crestY + crestR*0.2)
+  ctx.lineTo(crestX - crestR*0.85, crestY - crestR*0.6)
+  ctx.closePath(); ctx.fill()
+  // Crest inner
+  ctx.fillStyle = 'rgba(255,255,255,0.15)'
+  ctx.fillRect(crestX - crestR*0.5, crestY - crestR*0.3, crestR, crestR*0.9)
+  // Crest symbol
+  ctx.fillStyle = 'rgba(255,255,255,0.9)'
+  ctx.textAlign = 'center'; ctx.font = `bold ${crestR*0.7}px serif`
+  ctx.fillText('🎓', crestX, crestY + crestR*0.35)
+
+  // Crest shadow/frame
+  ctx.strokeStyle = 'rgba(212,175,55,0.6)'; ctx.lineWidth = 2
+  ctx.beginPath()
+  ctx.arc(crestX, crestY + crestR*0.05, crestR*1.25, 0, Math.PI*2)
+  ctx.stroke()
+
+  // ── Hanging banners ────────────────────────────────────────────────────────
+  // 4 tall navy banners with "Class of 2026" hanging from ceiling
+  const bannerPositions = [
+    { x: W*0.26, fromTop: 0, toBottom: H*0.58 },
+    { x: W*0.4,  fromTop: 0, toBottom: H*0.5 },
+    { x: W*0.6,  fromTop: 0, toBottom: H*0.5 },
+    { x: W*0.74, fromTop: 0, toBottom: H*0.58 },
+  ]
+
+  bannerPositions.forEach(({ x, fromTop, toBottom }) => {
+    const bW = W * 0.055
+    const bH = toBottom - fromTop
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.08)'
+    ctx.fillRect(x - bW/2 + 4, fromTop + 4, bW, bH)
+    // Banner body
+    const bg = ctx.createLinearGradient(x-bW/2, 0, x+bW/2, 0)
+    bg.addColorStop(0,'#0f2566'); bg.addColorStop(0.4,'#1a3a8f'); bg.addColorStop(0.6,'#1a3a8f'); bg.addColorStop(1,'#0f2566')
+    ctx.fillStyle = bg; ctx.fillRect(x - bW/2, fromTop, bW, bH)
+    // Gold trim edges
+    ctx.fillStyle = '#D4AF37'; ctx.fillRect(x-bW/2, fromTop, 3, bH)
+    ctx.fillRect(x+bW/2-3, fromTop, 3, bH)
+    // Top rod
+    ctx.fillStyle = '#ccc'; ctx.fillRect(x-bW/2-4, fromTop, bW+8, 6)
+    // Graduation cap icon
+    ctx.fillStyle = 'rgba(255,255,255,0.9)'
+    ctx.textAlign='center'
+    ctx.font = `${bW*0.5}px serif`
+    ctx.fillText('🎓', x, fromTop + bH*0.22)
+    // Class of 2026 text
+    ctx.fillStyle = '#ffffff'
+    ctx.font = `bold ${bW*0.2}px Arial, sans-serif`
+    ctx.fillText('Class', x, fromTop + bH*0.42)
+    ctx.fillText('of', x, fromTop + bH*0.53)
+    ctx.fillText('2026', x, fromTop + bH*0.65)
+    // Bottom V-notch
+    ctx.fillStyle = bg
+    ctx.beginPath()
+    ctx.moveTo(x-bW/2, toBottom)
+    ctx.lineTo(x, toBottom + bH*0.08)
+    ctx.lineTo(x+bW/2, toBottom)
+    ctx.fill()
+    ctx.fillStyle = '#D4AF37'
+    ctx.beginPath()
+    ctx.moveTo(x-bW/2, toBottom)
+    ctx.lineTo(x, toBottom + bH*0.08)
+    ctx.lineTo(x+bW/2, toBottom)
+    ctx.strokeStyle='#D4AF37'; ctx.lineWidth=2; ctx.stroke()
+  })
+
+  // ── Interactive kiosk stations ─────────────────────────────────────────────
+  // Left kiosk
+  const drawKiosk = (kx: number, ky: number, flip: boolean) => {
+    const kW = W * 0.12, kH = H * 0.22
+    const sx = flip ? kx - kW : kx
+    // Base / stand
+    ctx.fillStyle = '#e0e1e8'
+    ctx.fillRect(sx + kW*0.35, ky + kH, kW*0.3, H*0.06)
+    ctx.fillRect(sx + kW*0.2, ky + kH + H*0.055, kW*0.6, H*0.015)
+    // Screen body (angled)
+    ctx.fillStyle = '#f0f1f5'
+    ctx.beginPath()
+    ctx.moveTo(sx, ky + kH*0.2)
+    ctx.lineTo(sx+kW, ky)
+    ctx.lineTo(sx+kW, ky+kH)
+    ctx.lineTo(sx, ky+kH)
+    ctx.closePath(); ctx.fill()
+    ctx.strokeStyle='rgba(100,110,150,0.3)'; ctx.lineWidth=1; ctx.stroke()
+    // Screen glow
+    const sg = ctx.createLinearGradient(sx, ky, sx+kW, ky+kH*0.6)
+    sg.addColorStop(0,'rgba(80,120,220,0.35)'); sg.addColorStop(1,'rgba(40,80,180,0.15)')
+    ctx.fillStyle=sg; ctx.fillRect(sx+8, ky+6, kW-16, kH*0.65)
+    // Screen text lines
+    ctx.fillStyle='rgba(255,255,255,0.9)'
+    ctx.textAlign='center'; ctx.font=`bold ${kW*0.13}px Arial`
+    ctx.fillText('ENTER', sx+kW/2, ky+kH*0.28)
+    ctx.font=`${kW*0.1}px Arial`
+    ctx.fillStyle='rgba(212,200,255,0.8)'
+    ctx.fillText('Ceremony →', sx+kW/2, ky+kH*0.42)
+    ctx.fillText('Graduates →', sx+kW/2, ky+kH*0.55)
+    // Screen edge glow
+    ctx.strokeStyle='rgba(100,140,255,0.5)'; ctx.lineWidth=1.5
+    ctx.strokeRect(sx+8, ky+6, kW-16, kH*0.65)
+  }
+
+  drawKiosk(W*0.06, H*0.52, false)
+  drawKiosk(W*0.88, H*0.52, true)
+
+  // ── Wall signage ────────────────────────────────────────────────────────────
+  // Left wall signs
+  ctx.fillStyle = 'rgba(255,255,255,0.9)'
+  ctx.fillRect(W*0.01, H*0.38, W*0.07, H*0.14)
+  ctx.strokeStyle='rgba(26,58,143,0.3)'; ctx.lineWidth=1
+  ctx.strokeRect(W*0.01, H*0.38, W*0.07, H*0.14)
+  ctx.fillStyle='#1a3a8f'; ctx.textAlign='left'; ctx.font=`bold ${W*0.008}px Arial`
+  ctx.fillText('→', W*0.015, H*0.43)
+  ctx.font=`${W*0.007}px Arial`; ctx.fillStyle='#333'
+  ctx.fillText('Ceremony', W*0.025, H*0.43)
+  ctx.fillText('→', W*0.015, H*0.46); ctx.fillText('Graduates', W*0.025, H*0.46)
+  ctx.fillText('→', W*0.015, H*0.49); ctx.fillText('Photo Booth', W*0.025, H*0.49)
+
+  // Right wall signs
+  ctx.fillStyle = 'rgba(255,255,255,0.9)'
+  ctx.fillRect(W*0.92, H*0.38, W*0.07, H*0.14)
+  ctx.strokeStyle='rgba(26,58,143,0.3)'; ctx.lineWidth=1
+  ctx.strokeRect(W*0.92, H*0.38, W*0.07, H*0.14)
+  ctx.fillStyle='#1a3a8f'; ctx.textAlign='left'; ctx.font=`bold ${W*0.008}px Arial`
+  ctx.fillText('←', W*0.923, H*0.43)
+  ctx.font=`${W*0.007}px Arial`; ctx.fillStyle='#333'
+  ctx.fillText('Networking', W*0.933, H*0.43)
+  ctx.fillText('←', W*0.923, H*0.46); ctx.fillText('Programme', W*0.933, H*0.46)
+  ctx.fillText('←', W*0.923, H*0.49); ctx.fillText('My Avatar', W*0.933, H*0.49)
+
+  // ── Subtle pillars ──────────────────────────────────────────────────────────
+  ;[[W*0.18, vy, W*0.12, H], [W*0.82, vy, W*0.88, H]].forEach(([tx, ty, bx, by]) => {
+    const pg = ctx.createLinearGradient(tx-8, 0, tx+8, 0)
+    pg.addColorStop(0,'rgba(140,145,165,0.5)'); pg.addColorStop(0.5,'rgba(180,183,195,0.4)'); pg.addColorStop(1,'rgba(140,145,165,0.5)')
+    ctx.fillStyle = pg
+    ctx.beginPath()
+    ctx.moveTo(tx-10, ty); ctx.lineTo(tx+10, ty)
+    ctx.lineTo(bx+18, by); ctx.lineTo(bx-18, by)
+    ctx.closePath(); ctx.fill()
+    // Gold base strip
+    ctx.fillStyle='rgba(212,175,55,0.35)'; ctx.fillRect(bx-18, by-6, 36, 6)
+  })
+
+  // ── Floor reflection of banners ─────────────────────────────────────────────
+  bannerPositions.forEach(({ x }) => {
+    const rg = ctx.createLinearGradient(0, vy, 0, vy + (H-vy)*0.3)
+    rg.addColorStop(0,'rgba(26,58,143,0.12)'); rg.addColorStop(1,'transparent')
+    ctx.fillStyle=rg; ctx.fillRect(x-W*0.03, vy, W*0.06, (H-vy)*0.3)
+  })
+
+  ctx.textAlign = 'left' // reset
+}
+
+// ── Return hotspot screen positions ──────────────────────────────────────────
+function getLobbyHotspots(W: number, H: number) {
+  const vy = H * 0.44
   return {
-    auditorium: { x: p(0.5, 1, 0.35)[0],  y: p(0.5, 1, 0.35)[1] },
-    graduates:  { x: p(0.0, 0.85, 0.3)[0], y: p(0.0, 0.85, 0.3)[1] },
-    networking: { x: p(0.0, 0.4, 0.25)[0], y: p(0.0, 0.4, 0.25)[1] },
-    photobooth: { x: p(1.0, 0.4, 0.25)[0], y: p(1.0, 0.4, 0.25)[1] },
-    programme:  { x: p(1.0, 0.85, 0.3)[0], y: p(1.0, 0.85, 0.3)[1] },
-    avatar:     { x: p(0.5, 0.08, 0.08)[0], y: p(0.5, 0.08, 0.08)[1] },
+    auditorium: { x: W*0.5, y: vy*0.8 },
+    graduates:  { x: W*0.14, y: H*0.63 },
+    networking: { x: W*0.14, y: H*0.74 },
+    photobooth: { x: W*0.86, y: H*0.63 },
+    programme:  { x: W*0.86, y: H*0.74 },
+    avatar:     { x: W*0.86, y: H*0.85 },
   }
 }
 
-// ── Animated confetti canvas ─────────────────────────────────────────────────
-function ConfettiLayer() {
-  const ref = useRef<HTMLCanvasElement>(null)
-  useEffect(() => {
-    const c = ref.current; if (!c) return
-    const ctx = c.getContext('2d')!
-    c.width = window.innerWidth; c.height = window.innerHeight
-    c.style.width=`${c.width}px`; c.style.height=`${c.height}px`
-    const pieces = Array.from({length:80},(_,i)=>({
-      x: Math.random()*c.width, y: Math.random()*c.height,
-      vx: (Math.random()-0.5)*0.5, vy: Math.random()*0.4+0.1,
-      rot: Math.random()*Math.PI*2, rotV: (Math.random()-0.5)*0.04,
-      w: 5+Math.random()*6, h: 3+Math.random()*4,
-      col: ['#D4AF37','#7c3aed','#ec4899','#60a5fa','#34d399'][i%5],
-    }))
-    let raf: number
-    const draw = () => {
-      ctx.clearRect(0,0,c.width,c.height)
-      pieces.forEach(p => {
-        p.x+=p.vx; p.y+=p.vy; p.rot+=p.rotV
-        if(p.y>c.height) p.y=-10
-        ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot)
-        ctx.fillStyle=p.col; ctx.globalAlpha=0.5
-        ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h)
-        ctx.restore()
-      })
-      raf=requestAnimationFrame(draw)
-    }
-    raf=requestAnimationFrame(draw)
-    return ()=>cancelAnimationFrame(raf)
-  },[])
-  return <canvas ref={ref} className="absolute inset-0 pointer-events-none" style={{zIndex:4}} />
-}
-
-// ── Main MetaverseLobby ──────────────────────────────────────────────────────
+// ── Main export ──────────────────────────────────────────────────────────────
 export default function MetaverseLobby() {
   const router = useRouter()
   const { myName, myAvatar } = useGraduationStore()
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [hotspots, setHotspots] = useState<Record<string,(typeof ROOMS[0])&{x:number;y:number}>>({})
-  const [hoveredRoom, setHoveredRoom] = useState<string|null>(null)
-  const [zoomTarget, setZoomTarget] = useState<{x:number;y:number;href:string}|null>(null)
+  const [ready, setReady] = useState(false)
+  const [hotspots, setHotspots] = useState<Record<string, { x: number; y: number }>>({})
+  const [hoveredRoom, setHoveredRoom] = useState<string | null>(null)
+  const [zoomTarget, setZoomTarget] = useState<{ x: number; y: number } | null>(null)
+  const [showIntro, setShowIntro] = useState(true)
 
-  // Paint hall and compute hotspot positions
   useEffect(() => {
     const c = canvasRef.current; if (!c) return
     const paint = () => {
       const W = window.innerWidth, H = window.innerHeight
       c.width = W; c.height = H
-      c.style.width=`${W}px`; c.style.height=`${H}px`
+      c.style.width = `${W}px`; c.style.height = `${H}px`
       const ctx = c.getContext('2d')!
-      const positions = paintHall(ctx, W, H)
-      const hs: Record<string,(typeof ROOMS[0])&{x:number;y:number}> = {}
-      ROOMS.forEach(r => { hs[r.id] = { ...r, x: positions[r.id]?.x??0, y: positions[r.id]?.y??0 } })
-      setHotspots(hs)
+      paintLobby(ctx, W, H)
+      setHotspots(getLobbyHotspots(W, H))
+      setReady(true)
     }
     paint()
     window.addEventListener('resize', paint)
     return () => window.removeEventListener('resize', paint)
   }, [])
 
-  const handleEnter = useCallback((room: typeof ROOMS[0], x: number, y: number) => {
-    setZoomTarget({ x, y, href: room.href })
-    setTimeout(() => router.push(room.href), 900)
-  }, [router])
+  const handleEnter = useCallback((room: typeof ROOMS[0]) => {
+    const hs = hotspots[room.id]
+    setZoomTarget(hs ?? { x: window.innerWidth/2, y: window.innerHeight/2 })
+    setTimeout(() => router.push(room.href), 850)
+  }, [hotspots, router])
 
   return (
-    <div className="fixed inset-0 overflow-hidden" style={{background:'#02020c'}}>
+    <div className="fixed inset-0 overflow-hidden bg-white">
 
-      {/* Layer 1: Isometric hall canvas */}
-      <canvas ref={canvasRef} className="absolute inset-0" style={{zIndex:1}} />
+      {/* Lobby canvas */}
+      <canvas ref={canvasRef} className="absolute inset-0" style={{ zIndex: 1 }} />
 
-      {/* Layer 2: Animated confetti */}
-      <ConfettiLayer />
+      {/* Hotspot markers */}
+      {ready && (
+        <div className="absolute inset-0" style={{ zIndex: 10 }}>
+          {ROOMS.map(room => {
+            const hs = hotspots[room.id]
+            if (!hs) return null
+            const isHov = hoveredRoom === room.id
+            return (
+              <div key={room.id} className="absolute" style={{ left: hs.x, top: hs.y, transform: 'translate(-50%,-50%)' }}>
+                {/* Pulse ring */}
+                <div className="absolute rounded-full animate-ping"
+                  style={{ width:52, height:52, left:-26, top:-26, background:'rgba(26,58,143,0.08)', border:'1.5px solid rgba(26,58,143,0.3)', animationDuration:'2.2s' }} />
 
-      {/* Layer 3: Hotspot markers */}
-      <div className="absolute inset-0" style={{zIndex:10}}>
-        {Object.values(hotspots).map(room => {
-          const isHovered = hoveredRoom === room.id
-          return (
-            <div key={room.id}
-              className="absolute"
-              style={{ left: room.x, top: room.y, transform: 'translate(-50%,-50%)' }}>
+                <button
+                  onMouseEnter={() => setHoveredRoom(room.id)}
+                  onMouseLeave={() => setHoveredRoom(null)}
+                  onClick={() => handleEnter(room)}
+                  className="relative flex flex-col items-center justify-center rounded-full transition-all duration-200"
+                  style={{
+                    width:48, height:48,
+                    background: isHov ? 'rgba(26,58,143,0.92)' : 'rgba(255,255,255,0.92)',
+                    border: `2px solid ${isHov ? '#D4AF37' : 'rgba(26,58,143,0.5)'}`,
+                    boxShadow: isHov
+                      ? '0 0 22px rgba(26,58,143,0.5), 0 4px 16px rgba(0,0,0,0.15)'
+                      : '0 2px 12px rgba(0,0,0,0.12)',
+                    transform: isHov ? 'scale(1.15)' : 'scale(1)',
+                  }}>
+                  <span className="text-lg leading-none">{room.emoji}</span>
+                </button>
 
-              {/* Pulsing outer ring */}
-              <div className="absolute inset-0 rounded-full animate-ping"
-                style={{
-                  width: 56, height: 56,
-                  left: -28, top: -28,
-                  background: `${room.color}22`,
-                  border: `1px solid ${room.color}55`,
-                  animationDuration: '2s',
-                }} />
+                {/* Tooltip */}
+                <AnimatePresence>
+                  {isHov && (
+                    <motion.div
+                      initial={{ opacity:0, y:8, scale:0.9 }}
+                      animate={{ opacity:1, y:0, scale:1 }}
+                      exit={{ opacity:0, y:4 }}
+                      className="absolute pointer-events-none"
+                      style={{ bottom:58, left:'50%', transform:'translateX(-50%)', width:160, zIndex:20 }}>
+                      <div className="rounded-xl px-3 py-2 text-center shadow-xl"
+                        style={{ background:'#fff', border:'1.5px solid rgba(26,58,143,0.25)' }}>
+                        <p className="font-bold text-xs text-gray-800">{room.label}</p>
+                        <p className="text-xs text-blue-700 mt-0.5">{room.desc}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">Click to enter →</p>
+                      </div>
+                      <div className="mx-auto w-2 h-2 rotate-45 -mt-1 bg-white border-r border-b"
+                        style={{ borderColor:'rgba(26,58,143,0.25)' }} />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
-              {/* Main button */}
-              <button
-                onMouseEnter={() => setHoveredRoom(room.id)}
-                onMouseLeave={() => setHoveredRoom(null)}
-                onClick={() => handleEnter(room, room.x, room.y)}
-                className="relative flex flex-col items-center justify-center rounded-full cursor-pointer transition-all duration-200"
-                style={{
-                  width: 52, height: 52,
-                  background: isHovered ? `${room.color}30` : 'rgba(5,5,20,0.75)',
-                  border: `2px solid ${room.color}${isHovered ? 'cc':'70'}`,
-                  backdropFilter: 'blur(8px)',
-                  boxShadow: isHovered ? `0 0 24px ${room.color}60, 0 0 8px ${room.color}40` : `0 0 10px ${room.color}25`,
-                  transform: isHovered ? 'scale(1.18)' : 'scale(1)',
-                }}>
-                <span className="text-xl leading-none">{room.emoji}</span>
-              </button>
-
-              {/* Tooltip on hover */}
-              <AnimatePresence>
-                {isHovered && (
-                  <motion.div
-                    initial={{ opacity:0, y:6, scale:0.92 }}
-                    animate={{ opacity:1, y:0, scale:1 }}
-                    exit={{ opacity:0, y:4, scale:0.92 }}
-                    className="absolute pointer-events-none"
-                    style={{ bottom: 58, left: '50%', transform: 'translateX(-50%)', width: 150, zIndex: 20 }}>
-                    <div className="rounded-xl px-3 py-2 text-center"
-                      style={{ background:'rgba(3,4,16,0.92)', border:`1px solid ${room.color}50`, backdropFilter:'blur(12px)' }}>
-                      <p className="text-white font-bold text-xs">{room.label}</p>
-                      <p className="text-xs mt-0.5" style={{color: room.color, opacity:0.8}}>{room.desc}</p>
-                      <p className="text-white/30 text-xs mt-0.5">Click to enter →</p>
-                    </div>
-                    {/* Arrow */}
-                    <div className="mx-auto w-2 h-2 rotate-45 -mt-1"
-                      style={{background:'rgba(3,4,16,0.92)', border:`1px solid ${room.color}50`}} />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Layer 4: Zoom-into-room transition */}
+      {/* Zoom transition */}
       <AnimatePresence>
         {zoomTarget && (
           <motion.div
-            initial={{ opacity:0, scale:0.1, x: zoomTarget.x - window.innerWidth/2, y: zoomTarget.y - window.innerHeight/2 }}
-            animate={{ opacity:1, scale:8, x: 0, y: 0 }}
-            transition={{ duration:0.85, ease:[0.4,0,0.2,1] }}
-            className="fixed inset-0 bg-black z-50 pointer-events-none origin-center"
+            initial={{ opacity:0, scale:0.05 }}
+            animate={{ opacity:1, scale:12 }}
+            transition={{ duration:0.85, ease:[0.4,0,0.1,1] }}
+            className="fixed pointer-events-none"
+            style={{
+              zIndex:100,
+              width:80, height:80,
+              borderRadius:'50%',
+              background:'white',
+              left: zoomTarget.x - 40,
+              top: zoomTarget.y - 40,
+              transformOrigin:'center',
+            }}
           />
         )}
       </AnimatePresence>
 
       {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-5 py-3"
-        style={{background:'rgba(2,2,12,0.6)', backdropFilter:'blur(12px)', borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
+        style={{ background:'rgba(255,255,255,0.85)', backdropFilter:'blur(12px)', borderBottom:'1px solid rgba(26,58,143,0.1)' }}>
         <div className="flex items-center gap-3">
-          <span className="text-lg">🏫</span>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{background:'#1a3a8f'}}>
+            <span className="text-white text-base">🏫</span>
+          </div>
           <div>
-            <p className="text-white font-bold text-sm leading-tight">Nextora School</p>
-            <p className="text-white/35 text-xs">Virtual Graduation · Class of 2026</p>
+            <p className="text-gray-800 font-bold text-sm leading-tight">Nextora School</p>
+            <p className="text-blue-700 text-xs opacity-70">Virtual Graduation · Class of 2026</p>
           </div>
         </div>
         {myName ? (
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl"
-            style={{background:'rgba(212,175,55,0.08)', border:'1px solid rgba(212,175,55,0.2)'}}>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border"
+            style={{ background:'rgba(26,58,143,0.05)', borderColor:'rgba(26,58,143,0.15)' }}>
             <AvatarDisplay avatar={myAvatar} size={28} />
-            <span className="text-white/70 text-xs font-medium">{myName}</span>
+            <span className="text-gray-700 text-xs font-medium">{myName}</span>
           </div>
         ) : (
           <button onClick={() => router.push('/avatar')}
-            className="text-xs px-3 py-1.5 rounded-xl font-semibold text-white"
-            style={{background:'linear-gradient(135deg,#7c3aed,#D4AF37)'}}>
-            Create Avatar
+            className="text-xs px-4 py-2 rounded-xl font-semibold text-white"
+            style={{ background:'linear-gradient(135deg,#1a3a8f,#D4AF37)' }}>
+            Set up Avatar
           </button>
         )}
       </div>
 
       {/* Bottom hint */}
       <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
-        <div className="px-4 py-2 rounded-xl text-xs text-white/35 flex items-center gap-2"
-          style={{background:'rgba(0,0,0,0.5)', backdropFilter:'blur(8px)', border:'1px solid rgba(255,255,255,0.05)'}}>
-          <span className="animate-pulse">●</span>
-          <span>Click any glowing marker to enter that room</span>
+        <div className="px-4 py-2 rounded-xl text-xs text-gray-600 flex items-center gap-2 shadow"
+          style={{ background:'rgba(255,255,255,0.88)', backdropFilter:'blur(8px)', border:'1px solid rgba(26,58,143,0.12)' }}>
+          <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+          <span>Click any glowing marker to enter a room</span>
         </div>
       </div>
+
+      {/* Intro welcome overlay */}
+      <AnimatePresence>
+        {showIntro && ready && (
+          <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            style={{background:'rgba(255,255,255,0.6)', backdropFilter:'blur(8px)'}}>
+            <motion.div initial={{scale:0.9,y:20}} animate={{scale:1,y:0}} exit={{scale:0.95,opacity:0}}
+              className="text-center px-8 py-10 rounded-3xl shadow-2xl max-w-md w-full"
+              style={{background:'#fff', border:'2px solid rgba(26,58,143,0.15)'}}>
+              <div className="text-6xl mb-4">🎓</div>
+              <h1 className="text-2xl font-bold text-gray-800 mb-1">Welcome to</h1>
+              <h2 className="text-xl font-bold mb-1" style={{color:'#1a3a8f'}}>Nextora School</h2>
+              <p className="text-sm font-semibold mb-1" style={{color:'#D4AF37'}}>Virtual Graduation · Class of 2026</p>
+              <p className="text-xs text-gray-400 mb-2">UKG → Year 1  ·  Year 6 → 7  ·  Year 9 → 10</p>
+              <div className="w-16 h-0.5 mx-auto mb-5" style={{background:'rgba(212,175,55,0.5)'}} />
+              {myName ? (
+                <p className="text-sm text-gray-600 mb-5">Welcome back, <strong>{myName}</strong>! 🎉</p>
+              ) : (
+                <p className="text-sm text-gray-500 mb-5">Enter the hall and click a room to get started</p>
+              )}
+              <button onClick={() => setShowIntro(false)}
+                className="w-full py-3 rounded-2xl font-bold text-white text-base"
+                style={{background:'linear-gradient(135deg,#1a3a8f,#1e50c8)', boxShadow:'0 8px 24px rgba(26,58,143,0.35)'}}>
+                Enter Hall →
+              </button>
+              {!myName && (
+                <button onClick={() => { setShowIntro(false); router.push('/avatar') }}
+                  className="mt-2 w-full py-2 text-xs text-blue-700 hover:text-blue-900">
+                  Set up my avatar first
+                </button>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
