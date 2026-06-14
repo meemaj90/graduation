@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { GraduationCap, ArrowRight, Sparkles } from 'lucide-react'
 import CountdownTimer from '../components/CountdownTimer'
 
-const UNI_NAME = process.env.NEXT_PUBLIC_UNIVERSITY_NAME || 'Excellence University'
+const UNI_NAME = process.env.NEXT_PUBLIC_UNIVERSITY_NAME || 'Nextora School'
 const YEAR = process.env.NEXT_PUBLIC_CEREMONY_YEAR || '2026'
 
 // ── Starfield canvas ────────────────────────────────────────────────────────

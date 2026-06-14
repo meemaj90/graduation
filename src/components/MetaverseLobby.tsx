@@ -258,7 +258,7 @@ function paintAuditorium(ctx: CanvasRenderingContext2D, w: number, h: number) {
   ctx.shadowColor = '#D4AF37'; ctx.shadowBlur = 22
   const fontSize = Math.max(14, Math.round(bdH * 0.15))
   ctx.font = `bold ${fontSize}px Georgia, serif`
-  ctx.fillText('Excellence University', bdCx, bdTop + bdH * 0.34)
+  ctx.fillText('Nextora School', bdCx, bdTop + bdH * 0.34)
   ctx.shadowBlur = 0
   ctx.fillStyle = 'rgba(255,255,255,0.52)'
   const subSize = Math.max(9, Math.round(bdH * 0.063))
@@ -552,7 +552,7 @@ function EntryScreen({ onEnter }: { onEnter: () => void }) {
             Hall · 2026
           </span>
         </h1>
-        <p className="text-white/30 text-xs mb-8 tracking-widest uppercase">Excellence University · Virtual Ceremony</p>
+        <p className="text-white/30 text-xs mb-8 tracking-widest uppercase">Nextora School · Virtual Ceremony</p>
 
         {myName && (
           <div className="flex items-center justify-center gap-3 mb-7 px-5 py-3 rounded-2xl w-fit mx-auto"
