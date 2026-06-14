@@ -26,8 +26,8 @@ const ROOMS = [
 // ─────────────────────────────────────────────────────────────────────────────
 function paintAuditorium(canvas: HTMLCanvasElement, w: number, h: number) {
   const ctx = canvas.getContext('2d')!
-  canvas.width = w
-  canvas.height = h
+  // canvas size is set by the caller — just clear and paint
+  ctx.clearRect(0, 0, w, h)
 
   const cx = w / 2
   const horizon = h * 0.38   // vanishing point y
@@ -407,8 +407,7 @@ function paintAuditorium(canvas: HTMLCanvasElement, w: number, h: number) {
   ctx.shadowBlur = 0
   ctx.fillStyle = 'rgba(255,255,255,0.5)'
   ctx.font = `${Math.round(backdropH * 0.06)}px Georgia, serif`
-  ctx.letterSpacing = '0.2em'
-  ctx.fillText('GRADUATION CEREMONY · CLASS OF 2026', backdropCx, backdropTop + backdropH * 0.52)
+  ctx.fillText('GRADUATION CEREMONY  ·  CLASS OF 2026', backdropCx, backdropTop + backdropH * 0.52)
 
   // Gold divider
   const dvW = (backdropRight - backdropLeft) * 0.45
@@ -494,23 +493,26 @@ function AuditoriumBackground() {
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-    const dpr = Math.min(window.devicePixelRatio || 1, 2)
-    const w = window.innerWidth
-    const h = window.innerHeight
-    canvas.style.width = `${w}px`
-    canvas.style.height = `${h}px`
-    paintAuditorium(canvas, w * dpr, h * dpr)
-    const ctx = canvas.getContext('2d')!
-    ctx.scale(dpr, dpr)
 
-    const onResize = () => {
-      const nw = window.innerWidth, nh = window.innerHeight
-      canvas.style.width = `${nw}px`
-      canvas.style.height = `${nh}px`
-      paintAuditorium(canvas, nw * dpr, nh * dpr)
+    const paint = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2)
+      const w = window.innerWidth
+      const h = window.innerHeight
+      // Set pixel buffer size
+      canvas.width = Math.round(w * dpr)
+      canvas.height = Math.round(h * dpr)
+      // Set CSS display size
+      canvas.style.width = `${w}px`
+      canvas.style.height = `${h}px`
+      // Scale context so paint coordinates are in CSS pixels
+      const ctx = canvas.getContext('2d')!
+      ctx.scale(dpr, dpr)
+      paintAuditorium(canvas, w, h)
     }
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
+
+    paint()
+    window.addEventListener('resize', paint)
+    return () => window.removeEventListener('resize', paint)
   }, [])
 
   return (
@@ -627,7 +629,7 @@ function ThreeDOverlay() {
     <Canvas
       className="absolute inset-0"
       style={{ background: 'transparent' }}
-      gl={{ alpha: true, antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
+      gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}
       dpr={[1, 1.5]}
     >
       <PerspectiveCamera makeDefault fov={60} position={[0, 0, 5]} />
@@ -650,16 +652,20 @@ function StarParticles() {
     if (!canvas) return
     const ctx = canvas.getContext('2d')!
     let raf: number
-    canvas.width = window.innerWidth
-    canvas.height = window.innerHeight
+    const W = window.innerWidth
+    const H = window.innerHeight
+    canvas.width = W
+    canvas.height = H
+    canvas.style.width = `${W}px`
+    canvas.style.height = `${H}px`
     const particles = Array.from({ length: 60 }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height * 0.5,
+      x: Math.random() * W,
+      y: Math.random() * H * 0.5,
       r: Math.random() * 1.2 + 0.3,
       speed: Math.random() * 0.3 + 0.05,
     }))
     const draw = (t: number) => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      ctx.clearRect(0, 0, W, H)
       particles.forEach(p => {
         const o = 0.15 + 0.35 * Math.abs(Math.sin(t * 0.001 * p.speed + p.x))
         ctx.beginPath()
