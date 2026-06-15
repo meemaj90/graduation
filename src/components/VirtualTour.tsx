@@ -14,7 +14,6 @@ interface Hotspot {
   label: string
   sublabel?: string
   icon: string
-  // Equirectangular coords: yaw=horizontal (0=image-centre), pitch=vertical (0=horizon,+=up)
   yaw: number
   pitch: number
   action: 'scene' | 'route'
@@ -22,12 +21,15 @@ interface Hotspot {
   color: string
 }
 
-// ── Yaw calibration: pixel x of each label in a 1536-wide equirectangular image
-// formula: yaw = (x/1536 - 0.5) * 360
-// Pitch: labels are at ~y=250 in 670-tall image → (0.5 - 250/670)*180 ≈ +22°
-const SCENES: Record<SceneId, { image: string; title: string; hotspots: Hotspot[] }> = {
+const SCENES: Record<SceneId, {
+  type: 'image' | 'video'
+  src: string
+  title: string
+  hotspots: Hotspot[]
+}> = {
   lobby: {
-    image: 'https://i.ibb.co/3ymTcPJf/Chat-GPT-Image-Jun-15-2026-07-28-23-AM.png',
+    type: 'video',
+    src: '/images/lobby-video.mp4',
     title: 'Welcome Lobby',
     hotspots: [
       { id: 'aud',   label: 'Auditorium',  sublabel: 'Live Ceremony',        icon: '🎭', yaw: -163, pitch: 22, action: 'scene', target: 'auditorium',  color: '#2563eb' },
@@ -39,7 +41,8 @@ const SCENES: Record<SceneId, { image: string; title: string; hotspots: Hotspot[
     ],
   },
   auditorium: {
-    image: 'https://i.ibb.co/h1KSNWWV/Chat-GPT-Image-Jun-15-2026-07-34-27-AM.png',
+    type: 'image',
+    src: 'https://i.ibb.co/h1KSNWWV/Chat-GPT-Image-Jun-15-2026-07-34-27-AM.png',
     title: 'Graduation Ceremony Hall',
     hotspots: [
       { id: 'back', label: 'Back to Lobby', sublabel: 'Exit Hall', icon: '🚪', yaw: 178, pitch: 5, action: 'scene', target: 'lobby', color: '#6b7280' },
@@ -47,13 +50,15 @@ const SCENES: Record<SceneId, { image: string; title: string; hotspots: Hotspot[
   },
 }
 
-// ── 360° viewer ───────────────────────────────────────────────────────────────
+// ── Core 360° viewer ──────────────────────────────────────────────────────────
 function use360Viewer(
   canvasRef: React.RefObject<HTMLCanvasElement>,
-  imageUrl: string,
+  scene: SceneId,
   onReady: () => void,
+  // Callback to update hotspot DOM elements each frame (stable, no React re-renders)
+  onFrame: (project: (yaw: number, pitch: number) => { x: number; y: number; visible: boolean }) => void,
 ) {
-  const stateRef = useRef({
+  const st = useRef({
     camera: null as THREE.PerspectiveCamera | null,
     renderer: null as THREE.WebGLRenderer | null,
     dragging: false,
@@ -63,87 +68,92 @@ function use360Viewer(
     fov: 80,
   })
 
-  // Convert equirectangular (yaw, pitch) → screen position (%).
-  // Uses actual Three.js world-space projection — rock solid, no drift.
-  const projectToScreen = useCallback((hotYaw: number, hotPitch: number) => {
-    const s = stateRef.current
+  // World-space projection — no drift, matches sphere exactly
+  const project = useCallback((hotYaw: number, hotPitch: number) => {
+    const s = st.current
     if (!s.camera) return { x: 0, y: 0, visible: false }
-
-    const yRad = THREE.MathUtils.degToRad(hotYaw)
-    const pRad = THREE.MathUtils.degToRad(hotPitch)
-
-    // World position on the inner sphere for this (yaw, pitch)
+    const yr = THREE.MathUtils.degToRad(hotYaw)
+    const pr = THREE.MathUtils.degToRad(hotPitch)
     const wp = new THREE.Vector3(
-      Math.sin(yRad) * Math.cos(pRad),
-      Math.sin(pRad),
-      -Math.cos(yRad) * Math.cos(pRad),
+      Math.sin(yr) * Math.cos(pr),
+      Math.sin(pr),
+      -Math.cos(yr) * Math.cos(pr),
     ).multiplyScalar(500)
-
-    // Visibility check: must be in front of camera
-    const camFwd = new THREE.Vector3(0, 0, -1).applyQuaternion(s.camera.quaternion)
-    if (wp.clone().normalize().dot(camFwd) < 0.12) return { x: 0, y: 0, visible: false }
-
-    // Project to NDC → screen %
+    const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(s.camera.quaternion)
+    if (wp.clone().normalize().dot(fwd) < 0.12) return { x: 0, y: 0, visible: false }
     const ndc = wp.clone().project(s.camera)
-    return {
-      x: (ndc.x * 0.5 + 0.5) * 100,
-      y: (-ndc.y * 0.5 + 0.5) * 100,
-      visible: true,
-    }
+    return { x: (ndc.x * 0.5 + 0.5) * 100, y: (-ndc.y * 0.5 + 0.5) * 100, visible: true }
   }, [])
 
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-    const s = stateRef.current
+    const s = st.current
+    s.yaw = 0; s.pitch = 0; s.targetYaw = 0; s.targetPitch = 0
 
-    const W = window.innerWidth
-    const H = window.innerHeight
-
-    // Renderer — setSize without false so it sets both canvas buffer AND css size
+    const W = window.innerWidth, H = window.innerHeight
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-    renderer.setSize(W, H)  // sets css width/height too
+    renderer.setSize(W, H)
     s.renderer = renderer
 
-    const scene = new THREE.Scene()
+    const threeScene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(s.fov, W / H, 0.1, 1000)
     camera.rotation.order = 'YXZ'
     s.camera = camera
 
-    // Inner sphere (flip normals so texture shows from inside)
     const geo = new THREE.SphereGeometry(500, 80, 60)
     geo.scale(-1, 1, 1)
 
-    const loader = new THREE.TextureLoader()
-    loader.crossOrigin = 'anonymous'
-    loader.load(
-      imageUrl,
-      (tex) => {
-        tex.colorSpace = THREE.SRGBColorSpace
-        tex.minFilter = THREE.LinearMipmapLinearFilter
-        tex.magFilter = THREE.LinearFilter
-        tex.anisotropy = renderer.capabilities.getMaxAnisotropy()
-        tex.generateMipmaps = true
-        scene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: tex })))
-        onReady()
-      },
-      undefined,
-      () => {
-        scene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0x1a3a8f })))
-        onReady()
-      },
-    )
+    const sceneConfig = SCENES[scene]
+
+    let texture: THREE.Texture
+
+    if (sceneConfig.type === 'video') {
+      // Video texture — plays inside the sphere
+      const vid = document.createElement('video')
+      vid.src = sceneConfig.src
+      vid.loop = true; vid.muted = true; vid.playsInline = true
+      vid.crossOrigin = 'anonymous'
+      vid.play().catch(() => {})
+      texture = new THREE.VideoTexture(vid)
+      texture.colorSpace = THREE.SRGBColorSpace
+      const mat = new THREE.MeshBasicMaterial({ map: texture })
+      threeScene.add(new THREE.Mesh(geo, mat))
+      onReady()
+    } else {
+      const loader = new THREE.TextureLoader()
+      loader.crossOrigin = 'anonymous'
+      loader.load(
+        sceneConfig.src,
+        (tex) => {
+          tex.colorSpace = THREE.SRGBColorSpace
+          tex.minFilter = THREE.LinearMipmapLinearFilter
+          tex.magFilter = THREE.LinearFilter
+          tex.anisotropy = renderer.capabilities.getMaxAnisotropy()
+          tex.generateMipmaps = true
+          threeScene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: tex })))
+          onReady()
+        },
+        undefined,
+        () => {
+          threeScene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0x1a3a8f })))
+          onReady()
+        },
+      )
+    }
 
     let rafId = 0
     const animate = () => {
       rafId = requestAnimationFrame(animate)
-      // Smooth lerp — fast enough to feel responsive, stable on stop
       s.yaw   += (s.targetYaw   - s.yaw)   * 0.12
       s.pitch += (s.targetPitch - s.pitch) * 0.12
       camera.rotation.y = THREE.MathUtils.degToRad(-s.yaw)
       camera.rotation.x = THREE.MathUtils.degToRad(s.pitch)
-      renderer.render(scene, camera)
+      if (texture instanceof THREE.VideoTexture) texture.needsUpdate = true
+      renderer.render(threeScene, camera)
+      // Update hotspot positions via direct DOM — bypasses React, zero jitter
+      onFrame(project)
     }
     animate()
 
@@ -165,9 +175,9 @@ function use360Viewer(
       camera.fov = s.fov; camera.updateProjectionMatrix()
     }
     const onResize = () => {
-      const W2 = window.innerWidth, H2 = window.innerHeight
-      renderer.setSize(W2, H2)
-      camera.aspect = W2 / H2; camera.updateProjectionMatrix()
+      renderer.setSize(window.innerWidth, window.innerHeight)
+      camera.aspect = window.innerWidth / window.innerHeight
+      camera.updateProjectionMatrix()
     }
 
     canvas.addEventListener('mousedown', onDown)
@@ -191,23 +201,24 @@ function use360Viewer(
       canvas.removeEventListener('wheel', onWheel)
       window.removeEventListener('resize', onResize)
     }
-  }, [imageUrl])
+  }, [scene])
 
-  return { stateRef, projectToScreen }
+  return { stRef: st, project }
 }
 
 // ── Tour Guide ────────────────────────────────────────────────────────────────
 const TIPS: Record<SceneId, string[]> = {
   lobby: [
-    'Welcome! 🎓 Drag left & right to look around the full lobby.',
-    'Click the AUDITORIUM door to watch the live ceremony on the big screen!',
-    'Visit GRADUATES to see the Wall of Fame — take a screenshot to share!',
-    'Check PROGRAMME to see today\'s full schedule. 📋',
+    'Welcome! 🎓 Drag to look around the full 360° lobby!',
+    'Click AUDITORIUM to enter the ceremony hall and watch the live stream!',
+    'Visit GRADUATES for the Wall of Fame — click to share!',
+    'Check PROGRAMME for today\'s full schedule. 📋',
   ],
   auditorium: [
-    'You\'re in the Graduation Hall! The live stream plays on the big screen. 🎉',
-    'Drag to look around the 360° ceremony hall!',
-    'Use the reactions below to cheer on our graduates! 👏🎓',
+    'Drag to look around! 🎉 The live stream plays on the big screen ahead.',
+    'Audio from the ceremony continues even when you look away!',
+    'Look straight ahead to watch the graduation ceremony on stage.',
+    'React with the emoji buttons below! 👏🎓',
   ],
 }
 
@@ -223,23 +234,24 @@ function TourGuide({ scene }: { scene: SceneId }) {
   if (!show) return null
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-      className="absolute bottom-20 left-4 z-30 flex items-end gap-3" style={{ maxWidth: 300 }}>
+      className="absolute bottom-20 left-4 z-30 flex items-end gap-2 pointer-events-auto"
+      style={{ maxWidth: 280 }}>
       <div className="flex-shrink-0 relative">
-        <div className="w-12 h-12 rounded-full flex items-center justify-center text-2xl shadow-xl"
-          style={{ background: 'linear-gradient(135deg,#1a3a8f,#2563eb)', border: '3px solid #D4AF37' }}>🤖</div>
-        <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-green-400 border-2 border-white animate-pulse" />
+        <div className="w-11 h-11 rounded-full flex items-center justify-center text-xl shadow-xl"
+          style={{ background: 'linear-gradient(135deg,#1a3a8f,#2563eb)', border: '2px solid #D4AF37' }}>🤖</div>
+        <div className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-400 border-2 border-white" />
       </div>
       <motion.div key={idx} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
         className="relative rounded-2xl rounded-bl-none px-3 py-2.5 shadow-xl"
         style={{ background: 'rgba(8,16,60,0.95)', border: '1px solid rgba(212,175,55,0.3)', backdropFilter: 'blur(12px)' }}>
         <p className="text-white text-xs leading-relaxed">{tips[idx]}</p>
-        <div className="flex items-center justify-between mt-1.5">
+        <div className="flex justify-between items-center mt-1.5">
           <div className="flex gap-1">
             {tips.map((_, i) => <div key={i} className={`w-1.5 h-1.5 rounded-full ${i === idx ? 'bg-yellow-400' : 'bg-white/20'}`} />)}
           </div>
           <button onClick={() => setShow(false)} className="text-white/30 text-xs ml-3">dismiss</button>
         </div>
-        <div className="absolute -left-2 bottom-3 w-0 h-0"
+        <div className="absolute -left-1.5 bottom-3 w-0 h-0"
           style={{ borderTop: '6px solid transparent', borderBottom: '6px solid transparent', borderRight: '8px solid rgba(8,16,60,0.95)' }} />
       </motion.div>
     </motion.div>
@@ -254,7 +266,7 @@ const SCHEDULE = [
   { time: '1:00 PM',  title: 'Closing Ceremony' },
 ]
 
-// ── Main ──────────────────────────────────────────────────────────────────────
+// ── Main Virtual Tour ─────────────────────────────────────────────────────────
 export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
   const router = useRouter()
   const { myName, attendeeCount, bbbJoinUrl, ceremonyStatus, reactions, addReaction } =
@@ -263,31 +275,52 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
   const [scene, setScene]         = useState<SceneId>(initialScene)
   const [loading, setLoading]     = useState(true)
   const [transitioning, setTrans] = useState(false)
-  const [hoveredHs, setHoveredHs] = useState<string | null>(null)
   const [showPanel, setShowPanel] = useState(false)
-  const [, tick]                  = useState(0)   // force re-render for hotspot projection
 
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const { stateRef, projectToScreen } = use360Viewer(
-    canvasRef,
-    SCENES[scene].image,
-    () => setLoading(false),
-  )
+  const canvasRef   = useRef<HTMLCanvasElement>(null)
+  // Refs for hotspot DOM elements — updated each frame without React re-renders
+  const hsRefs      = useRef<{ [key: string]: HTMLDivElement | null }>({})
+  // Ref for BBB screen overlay div
+  const bbbRef      = useRef<HTMLDivElement>(null)
 
-  // Re-project hotspots every animation frame
-  useEffect(() => {
-    let raf: number
-    const loop = () => { tick(n => n + 1); raf = requestAnimationFrame(loop) }
-    raf = requestAnimationFrame(loop)
-    return () => cancelAnimationFrame(raf)
-  }, [])
+  const cur = SCENES[scene]
+
+  // Called every animation frame — updates hotspot & BBB positions via direct DOM
+  const onFrame = useCallback((project: (y: number, p: number) => { x: number; y: number; visible: boolean }) => {
+    // Update hotspots
+    cur.hotspots.forEach(hs => {
+      const el = hsRefs.current[hs.id]
+      if (!el) return
+      const pos = project(hs.yaw, hs.pitch)
+      if (pos.visible) {
+        el.style.display = 'block'
+        el.style.left = pos.x + '%'
+        el.style.top  = pos.y + '%'
+      } else {
+        el.style.display = 'none'
+      }
+    })
+    // Update BBB screen position (auditorium only)
+    if (bbbRef.current && scene === 'auditorium') {
+      const pos = project(0, 12) // screen is dead centre, slightly above horizon
+      if (pos.visible) {
+        bbbRef.current.style.display = 'block'
+        bbbRef.current.style.left = pos.x + '%'
+        bbbRef.current.style.top  = pos.y + '%'
+      } else {
+        bbbRef.current.style.display = 'none'
+      }
+    }
+  }, [scene, cur.hotspots])
+
+  const { stRef } = use360Viewer(canvasRef, scene, () => setLoading(false), onFrame)
 
   const goScene = (id: string) => {
     if (transitioning || id === scene) return
     setTrans(true); setLoading(true)
     setTimeout(() => {
       setScene(id as SceneId)
-      stateRef.current.targetYaw = 0; stateRef.current.targetPitch = 0
+      stRef.current.targetYaw = 0; stRef.current.targetPitch = 0
       setTrans(false)
     }, 500)
   }
@@ -297,15 +330,13 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
     else router.push(hs.target)
   }
 
-  const cur = SCENES[scene]
-
   return (
     <div className="fixed inset-0 overflow-hidden bg-black select-none">
 
-      {/* Canvas — no inline size; renderer.setSize() handles everything */}
+      {/* 360° canvas */}
       <canvas ref={canvasRef} style={{ display: 'block', cursor: 'grab', touchAction: 'none' }} />
 
-      {/* Loading */}
+      {/* Loading overlay */}
       <AnimatePresence>
         {(loading || transitioning) && (
           <motion.div initial={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.35 }}
@@ -322,84 +353,79 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
         )}
       </AnimatePresence>
 
-      {/* ── Hotspots — pinned to sphere, no drift ── */}
-      {!loading && cur.hotspots.map(hs => {
-        const pos = projectToScreen(hs.yaw, hs.pitch)
-        if (!pos.visible) return null
-        return (
-          <div key={hs.id} className="absolute z-20 pointer-events-auto"
-            style={{ left: `${pos.x}%`, top: `${pos.y}%`, transform: 'translate(-50%,-50%)' }}>
-            <button
-              onClick={() => handleHotspot(hs)}
-              onMouseEnter={() => setHoveredHs(hs.id)}
-              onMouseLeave={() => setHoveredHs(null)}
-              className="relative flex flex-col items-center gap-1 group">
-              {/* Pulse ring */}
-              <motion.div animate={{ scale: [1, 2.2], opacity: [0.6, 0] }}
-                transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut' }}
-                className="absolute rounded-full pointer-events-none"
-                style={{ width: 44, height: 44, top: -2, left: -2, background: hs.color }} />
-              {/* Button */}
-              <div className="relative w-10 h-10 rounded-full flex items-center justify-center text-lg z-10 shadow-2xl group-hover:scale-115 transition-transform"
-                style={{ background: hs.color, border: '3px solid white', boxShadow: `0 0 20px ${hs.color}` }}>
-                {hs.icon}
-              </div>
-              {/* Label — always visible, stays put */}
-              <div className="px-2.5 py-0.5 rounded-lg text-xs font-bold text-white whitespace-nowrap shadow-lg"
-                style={{ background: 'rgba(8,16,60,0.9)', border: `1px solid ${hs.color}70` }}>
-                {hs.label}
-              </div>
-            </button>
-
-            {/* Hover tooltip */}
-            <AnimatePresence>
-              {hoveredHs === hs.id && hs.sublabel && (
-                <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: -8 }} exit={{ opacity: 0 }}
-                  className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-3 py-1.5 rounded-xl text-center whitespace-nowrap pointer-events-none"
-                  style={{ background: 'rgba(8,16,60,0.97)', border: `1px solid ${hs.color}`, boxShadow: `0 0 14px ${hs.color}60` }}>
-                  <p className="text-white text-xs font-bold">{hs.label}</p>
-                  <p className="text-xs" style={{ color: hs.color }}>{hs.sublabel}</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        )
-      })}
-
-      {/* BBB screen overlay — auditorium only */}
-      {scene === 'auditorium' && !loading && (() => {
-        const pos = projectToScreen(0, 12)
-        if (!pos.visible) return null
-        return (
-          <div className="absolute z-10 rounded-xl overflow-hidden pointer-events-auto"
-            style={{
-              left: `${pos.x}%`, top: `${pos.y}%`,
-              width: 520, height: 300,
-              transform: 'translate(-50%,-50%)',
-              border: '3px solid rgba(212,175,55,0.8)',
-              boxShadow: '0 0 60px rgba(37,99,235,0.6), 0 0 20px rgba(212,175,55,0.4)',
-            }}>
-            {bbbJoinUrl ? (
-              <iframe src={bbbJoinUrl} className="w-full h-full"
-                allow="camera; microphone; display-capture; autoplay"
-                style={{ border: 'none' }} />
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center text-center px-6"
-                style={{ background: 'linear-gradient(135deg,#060e30,#0f2060,#060e30)' }}>
-                <div className="text-4xl mb-2">🎓</div>
-                <p className="text-white font-bold">NEXTORA ACADEMY</p>
-                <p className="font-black text-2xl" style={{ color: '#D4AF37' }}>GRADUATION CEREMONY 2026</p>
-                <p className="text-white/30 text-xs mt-3">Live stream appears here</p>
+      {/* ── HOTSPOTS — pure DOM positioning, zero React re-renders, zero jitter ── */}
+      {cur.hotspots.map(hs => (
+        <div
+          key={hs.id}
+          ref={el => { hsRefs.current[hs.id] = el }}
+          className="absolute z-20 pointer-events-auto"
+          style={{ display: 'none', transform: 'translate(-50%,-50%)' }}>
+          <button
+            onClick={() => handleHotspot(hs)}
+            className="flex flex-col items-center gap-1 group relative">
+            {/* Pulse ring — CSS animation only, no JS */}
+            <span className="absolute rounded-full pointer-events-none animate-ping"
+              style={{ width: 48, height: 48, top: -4, left: -4, background: hs.color, opacity: 0.4 }} />
+            {/* Button */}
+            <div className="relative w-10 h-10 rounded-full flex items-center justify-center text-xl z-10 shadow-2xl transition-transform duration-150 group-hover:scale-125"
+              style={{ background: hs.color, border: '3px solid white', boxShadow: `0 0 22px ${hs.color}` }}>
+              {hs.icon}
+            </div>
+            {/* Label */}
+            <div className="px-2.5 py-0.5 rounded-lg text-xs font-bold text-white whitespace-nowrap shadow-lg"
+              style={{ background: 'rgba(8,16,60,0.92)', border: `1px solid ${hs.color}80`, backdropFilter: 'blur(8px)' }}>
+              {hs.label}
+            </div>
+            {/* Sublabel on hover */}
+            {hs.sublabel && (
+              <div className="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-3 py-1.5 rounded-xl text-center whitespace-nowrap"
+                style={{ background: 'rgba(8,16,60,0.97)', border: `1px solid ${hs.color}`, boxShadow: `0 0 14px ${hs.color}60` }}>
+                <p className="text-white text-xs font-bold">{hs.label}</p>
+                <p className="text-xs" style={{ color: hs.color }}>{hs.sublabel}</p>
               </div>
             )}
-            {['top-0 left-0','top-0 right-0','bottom-0 left-0','bottom-0 right-0'].map((c,i)=>(
-              <div key={i} className={`absolute ${c} w-3 h-3`} style={{ background:'#D4AF37', boxShadow:'0 0 8px #D4AF37' }} />
-            ))}
-          </div>
-        )
-      })()}
+          </button>
+        </div>
+      ))}
 
-      {/* Top bar */}
+      {/* ── BBB SCREEN — pinned to stage in auditorium, audio always plays ── */}
+      <div
+        ref={bbbRef}
+        className="absolute z-10 pointer-events-auto"
+        style={{
+          display: scene === 'auditorium' ? 'none' : 'none',
+          transform: 'translate(-50%,-50%)',
+          width: 520, height: 300,
+          borderRadius: 12,
+          overflow: 'hidden',
+          border: '3px solid rgba(212,175,55,0.8)',
+          boxShadow: '0 0 60px rgba(37,99,235,0.6), 0 0 20px rgba(212,175,55,0.4)',
+        }}>
+        {bbbJoinUrl ? (
+          /* iframe always mounted when in auditorium — audio plays even off-screen */
+          <iframe
+            src={bbbJoinUrl}
+            className="w-full h-full"
+            allow="camera; microphone; display-capture; autoplay"
+            style={{ border: 'none' }}
+          />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center text-center px-6"
+            style={{ background: 'linear-gradient(135deg,#060e30,#0f2060,#060e30)' }}>
+            <div className="text-4xl mb-2">🎓</div>
+            <p className="text-white font-bold">NEXTORA ACADEMY</p>
+            <p className="font-black text-2xl" style={{ color: '#D4AF37' }}>GRADUATION CEREMONY 2026</p>
+            <p className="text-white/30 text-xs mt-3">Live stream will appear here</p>
+            <p className="text-white/20 text-xs">Celebrating Excellence · Inspiring Futures</p>
+          </div>
+        )}
+        {/* Gold corner accents */}
+        {['top-0 left-0','top-0 right-0','bottom-0 left-0','bottom-0 right-0'].map((c,i)=>(
+          <div key={i} className={`absolute ${c} w-3 h-3`} style={{ background:'#D4AF37', boxShadow:'0 0 8px #D4AF37' }} />
+        ))}
+      </div>
+
+      {/* TOP BAR */}
       <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-4 py-2.5"
         style={{ background: 'rgba(8,16,60,0.88)', backdropFilter: 'blur(14px)', borderBottom: '1px solid rgba(212,175,55,0.18)' }}>
         <div className="flex items-center gap-3">
@@ -410,9 +436,9 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
             <p className="text-xs leading-none" style={{ color: '#D4AF37' }}>GRADUATION WORLD 2026</p>
           </div>
           <span className="hidden sm:flex items-center gap-1 text-xs text-white/50">
-            <span className="w-2 h-2 rounded-full bg-green-400 inline-block animate-pulse" />{attendeeCount} online
+            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse inline-block" />{attendeeCount} online
           </span>
-          <span className="px-2 py-0.5 rounded-full text-xs text-white/50"
+          <span className="px-2 py-0.5 rounded-full text-xs text-white/50 hidden sm:inline-block"
             style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}>
             📍 {cur.title}
           </span>
@@ -451,11 +477,10 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
 
       {/* Drag hint */}
       {!loading && (
-        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2 }}
-          className="absolute top-14 left-1/2 -translate-x-1/2 z-10 text-xs text-white/40 px-3 py-1 rounded-full pointer-events-none"
+        <p className="absolute top-14 left-1/2 -translate-x-1/2 z-10 text-xs text-white/40 px-3 py-1 rounded-full pointer-events-none"
           style={{ background: 'rgba(0,0,0,0.3)' }}>
           👆 Drag to look around · Scroll to zoom
-        </motion.p>
+        </p>
       )}
 
       {/* Tour guide */}
@@ -475,8 +500,7 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
       {/* Floating reactions */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 25 }}>
         {reactions.map(r => (
-          <motion.div key={r.id} className="absolute bottom-16 text-3xl"
-            style={{ left: `${r.x}vw` }}
+          <motion.div key={r.id} className="absolute bottom-16 text-3xl" style={{ left: `${r.x}vw` }}
             initial={{ opacity: 1, y: 0, scale: 1 }}
             animate={{ opacity: 0, y: -200, scale: 1.8 }}
             transition={{ duration: 2.5, ease: 'easeOut' }}>
@@ -488,8 +512,8 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
       {/* Side panel */}
       <AnimatePresence>
         {showPanel && (
-          <motion.div initial={{ x: 300, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 300, opacity: 0 }}
-            className="absolute top-12 right-0 bottom-16 w-64 z-30 flex flex-col overflow-y-auto"
+          <motion.div initial={{ x: 280, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 280, opacity: 0 }}
+            className="absolute top-12 right-0 bottom-14 w-64 z-30 flex flex-col overflow-y-auto"
             style={{ background: 'rgba(8,16,60,0.96)', backdropFilter: 'blur(16px)', borderLeft: '1px solid rgba(212,175,55,0.15)' }}>
             <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
               <p className="text-white font-bold text-sm">Today's Events</p>
@@ -504,29 +528,27 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
                 </div>
               ))}
             </div>
-            <div className="p-3" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+            <div className="p-3 space-y-1" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
               <p className="text-white/40 text-xs font-bold uppercase mb-2">Explore Campus</p>
               {[
                 { label: 'Lobby',       icon: '🏛️', fn: () => { goScene('lobby'); setShowPanel(false) } },
                 { label: 'Auditorium',  icon: '🎭', fn: () => { goScene('auditorium'); setShowPanel(false) } },
               ].map(r => (
                 <button key={r.label} onClick={r.fn}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-white/55 hover:text-white hover:bg-white/5 transition-colors text-left">
-                  <span>{r.icon}</span>
-                  <span className="text-sm font-semibold flex-1">{r.label}</span>
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-white/55 hover:text-white hover:bg-white/5 transition-colors">
+                  <span>{r.icon}</span><span className="text-sm font-semibold flex-1">{r.label}</span>
                   <ChevronRight className="w-3.5 h-3.5 opacity-40" />
                 </button>
               ))}
               {[
-                { label: 'Graduates',   icon: '🎓', href: '/graduates' },
-                { label: 'Photo Booth', icon: '📷', href: '/photo-booth' },
-                { label: 'Programme',   icon: '📋', href: '/program' },
-                { label: 'Networking',  icon: '👥', href: '/networking' },
+                { label: 'Hall of Fame', icon: '🏆', href: '/graduates' },
+                { label: 'Photo Booth',  icon: '📷', href: '/photo-booth' },
+                { label: 'Programme',    icon: '📋', href: '/program' },
+                { label: 'Networking',   icon: '👥', href: '/networking' },
               ].map(r => (
                 <Link key={r.label} href={r.href}
                   className="flex items-center gap-2 px-3 py-2 rounded-lg text-white/55 hover:text-white hover:bg-white/5 transition-colors">
-                  <span>{r.icon}</span>
-                  <span className="text-sm font-semibold flex-1">{r.label}</span>
+                  <span>{r.icon}</span><span className="text-sm font-semibold flex-1">{r.label}</span>
                   <ChevronRight className="w-3.5 h-3.5 opacity-40" />
                 </Link>
               ))}
