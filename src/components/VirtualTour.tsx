@@ -28,7 +28,7 @@ interface Hotspot {
 
 const SCENES: Record<SceneId, { image: string; title: string; hotspots: Hotspot[] }> = {
   lobby: {
-    image: '/images/lobby-360.jpg',
+    image: 'https://i.ibb.co/3ymTcPJf/Chat-GPT-Image-Jun-15-2026-07-28-23-AM.png',
     title: 'Welcome Lobby',
     hotspots: [
       { id: 'aud',   label: 'Auditorium',  sublabel: 'Live Ceremony',          icon: '🎭', yaw: -155, pitch: -8,  action: 'scene', target: 'auditorium', color: '#2563eb' },
@@ -40,7 +40,7 @@ const SCENES: Record<SceneId, { image: string; title: string; hotspots: Hotspot[
     ],
   },
   auditorium: {
-    image: '/images/auditorium-360.jpg',
+    image: 'https://i.ibb.co/h1KSNWWV/Chat-GPT-Image-Jun-15-2026-07-34-27-AM.png',
     title: 'Graduation Ceremony Hall',
     hotspots: [
       { id: 'back',  label: 'Back to Lobby', sublabel: 'Exit Hall',            icon: '🚪', yaw: 175,  pitch: -5,  action: 'scene', target: 'lobby',      color: '#6b7280' },
