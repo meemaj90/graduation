@@ -1,403 +1,279 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Users, MessageSquare, Send, Radio, X } from 'lucide-react'
+import {
+  Users, MessageSquare, Send, X, Trophy, Image, Camera,
+  Heart, HelpCircle, Hand, Smile, Eye, Mic, Home, Map,
+  ChevronRight, Star, Radio,
+} from 'lucide-react'
 import Link from 'next/link'
 import { useGraduationStore } from '../../store/useGraduationStore'
 
-interface ChatMessage {
-  id: string
-  author: string
-  text: string
-  time: string
-}
+interface ChatMessage { id: string; author: string; text: string; time: string }
 
 const DEMO_MESSAGES: ChatMessage[] = [
-  { id: '1', author: 'Sarah (Mum)', text: 'So proud of you sweetheart! 🎓❤️', time: '10:02' },
-  { id: '2', author: 'Mr Hassan', text: 'Congratulations to all our graduates!', time: '10:04' },
-  { id: '3', author: 'James family', text: 'Go James!! We love you!! 👏👏', time: '10:06' },
-  { id: '4', author: 'Year 6 Parent', text: 'All grown up — so fast! 😭🎉', time: '10:07' },
-  { id: '5', author: 'Principal', text: 'Welcome to the next chapter, Year 9!', time: '10:08' },
-  { id: '6', author: 'Alumni', text: 'Class of 2026! One of us! 🙌', time: '10:09' },
+  { id: '1', author: 'Sophia Martinez', text: 'So proud of everyone! 🎉', time: '11:02' },
+  { id: '2', author: 'Daniel Lee', text: 'Congratulations Class of 2026! 🎓', time: '11:03' },
+  { id: '3', author: 'Isabella Thomas', text: 'This is such a special day! 💙', time: '11:05' },
+  { id: '4', author: 'William Anderson', text: 'You all did amazing! ⭐', time: '11:06' },
+  { id: '5', author: 'Mrs Rahman', text: 'Our stars of tomorrow! 🌟', time: '11:07' },
 ]
 
-// ── Isometric auditorium painter — matches the purple/gold illustrated reference ──
-function paintIsometricAuditorium(
-  ctx: CanvasRenderingContext2D,
-  W: number,
-  H: number
-): { scrX: number; scrY: number; scrW: number; scrH: number } {
+const SCHEDULE = [
+  { time: '10:00 AM', title: 'Welcome Address', live: false },
+  { time: '10:15 AM', title: 'Student Awards', live: false },
+  { time: '11:00 AM', title: 'Graduation Ceremony', live: true },
+  { time: '12:00 PM', title: 'Speeches', live: false },
+  { time: '12:30 PM', title: 'Photo Session', live: false },
+  { time: '1:00 PM', title: 'Closing Ceremony', live: false },
+]
 
+const ROOMS = [
+  { label: 'Auditorium', sub: 'Join Ceremony', icon: '🎭', href: '/auditorium', active: true },
+  { label: 'Awards Hall', sub: 'Celebrate Achievements', icon: '🏆', href: '/graduates' },
+  { label: 'Student Gallery', sub: 'Inspire & Create', icon: '🖼️', href: '/graduates' },
+  { label: 'Memory Lane', sub: 'Our Journey', icon: '📸', href: '/photo-booth' },
+  { label: 'Photo Booth', sub: 'Capture Moments', icon: '📷', href: '/photo-booth' },
+  { label: 'Appreciation Wall', sub: 'Share Your Love', icon: '❤️', href: '/networking' },
+  { label: 'Networking Lounge', sub: 'Meet & Connect', icon: '👥', href: '/networking' },
+  { label: 'Help Center', sub: 'Get Support', icon: '❓', href: '/' },
+]
+
+// ── Bright K-12 auditorium background ──────────────────────────────────────
+function paintAuditorium(ctx: CanvasRenderingContext2D, W: number, H: number) {
   ctx.clearRect(0, 0, W, H)
 
-  // ── BACKGROUND GRADIENT (purple ceiling/walls) ──────────────────────────
-  const bg = ctx.createLinearGradient(0, 0, 0, H)
-  bg.addColorStop(0, '#2a0a4a')
-  bg.addColorStop(0.45, '#3d1260')
-  bg.addColorStop(0.7, '#4a1878')
-  bg.addColorStop(1, '#1a0a2e')
-  ctx.fillStyle = bg
+  // White/cream walls background
+  const wallG = ctx.createLinearGradient(0, 0, 0, H)
+  wallG.addColorStop(0, '#e8f0fe')
+  wallG.addColorStop(0.4, '#dce8fd')
+  wallG.addColorStop(1, '#c5d8fc')
+  ctx.fillStyle = wallG
   ctx.fillRect(0, 0, W, H)
 
-  // ── CEILING decorative coffers ──────────────────────────────────────────
-  for (let c = 0; c < 6; c++) {
-    for (let r = 0; r < 3; r++) {
-      const cx = W * 0.08 + c * W * 0.14
-      const cy = H * 0.03 + r * H * 0.07
-      ctx.strokeStyle = `rgba(212,175,55,${0.18 - r * 0.04})`
-      ctx.lineWidth = 1
-      ctx.strokeRect(cx, cy, W * 0.12, H * 0.055)
-    }
-  }
+  // Ceiling — white with gold ring light
+  const ceilG = ctx.createLinearGradient(0, 0, 0, H * 0.18)
+  ceilG.addColorStop(0, '#ffffff')
+  ceilG.addColorStop(1, '#f0f4ff')
+  ctx.fillStyle = ceilG
+  ctx.fillRect(0, 0, W, H * 0.18)
+
+  // Central ceiling ring light
+  const ringX = W / 2, ringY = H * 0.08
+  const ringG = ctx.createRadialGradient(ringX, ringY, 20, ringX, ringY, 120)
+  ringG.addColorStop(0, 'rgba(255,220,80,0.6)')
+  ringG.addColorStop(0.4, 'rgba(255,200,50,0.2)')
+  ringG.addColorStop(1, 'transparent')
+  ctx.fillStyle = ringG; ctx.beginPath(); ctx.arc(ringX, ringY, 120, 0, Math.PI * 2); ctx.fill()
+  ctx.strokeStyle = 'rgba(212,175,55,0.7)'; ctx.lineWidth = 6
+  ctx.beginPath(); ctx.arc(ringX, ringY, 70, 0, Math.PI * 2); ctx.stroke()
+  ctx.strokeStyle = 'rgba(212,175,55,0.4)'; ctx.lineWidth = 3
+  ctx.beginPath(); ctx.arc(ringX, ringY, 90, 0, Math.PI * 2); ctx.stroke()
 
   // Ceiling spotlights
-  const spotXs = [W * 0.22, W * 0.38, W * 0.55, W * 0.7, W * 0.82]
-  spotXs.forEach(sx => {
-    const sg = ctx.createRadialGradient(sx, H * 0.04, 0, sx, H * 0.04, 60)
-    sg.addColorStop(0, 'rgba(255,230,120,0.55)')
+  ;[W * 0.2, W * 0.35, W * 0.5, W * 0.65, W * 0.8].forEach(sx => {
+    const sg = ctx.createRadialGradient(sx, 0, 0, sx, 0, 80)
+    sg.addColorStop(0, 'rgba(255,240,150,0.4)')
     sg.addColorStop(1, 'transparent')
-    ctx.fillStyle = sg
-    ctx.beginPath()
-    ctx.arc(sx, H * 0.04, 60, 0, Math.PI * 2)
-    ctx.fill()
-    // Pendant housing
-    ctx.fillStyle = '#1a0a2e'
-    ctx.beginPath()
-    ctx.arc(sx, H * 0.04, 8, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.fillStyle = 'rgba(255,240,150,0.95)'
-    ctx.beginPath()
-    ctx.arc(sx, H * 0.04, 4, 0, Math.PI * 2)
-    ctx.fill()
+    ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(sx, 0, 80, 0, Math.PI * 2); ctx.fill()
+    ctx.fillStyle = '#d4d4d4'; ctx.beginPath(); ctx.arc(sx, 6, 10, 0, Math.PI * 2); ctx.fill()
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(sx, 6, 6, 0, Math.PI * 2); ctx.fill()
   })
 
-  // ── LEFT WALL (purple with gold trim) ──────────────────────────────────
-  const wallLG = ctx.createLinearGradient(0, 0, W * 0.18, 0)
-  wallLG.addColorStop(0, '#1a0535')
-  wallLG.addColorStop(1, '#3d1260')
-  ctx.fillStyle = wallLG
-  ctx.beginPath()
-  ctx.moveTo(0, 0); ctx.lineTo(W * 0.18, 0)
-  ctx.lineTo(W * 0.18, H * 0.78); ctx.lineTo(0, H)
-  ctx.closePath(); ctx.fill()
-
-  // Wall panels (left)
-  for (let p = 0; p < 4; p++) {
-    const py = H * 0.07 + p * H * 0.17
-    ctx.strokeStyle = 'rgba(212,175,55,0.35)'
-    ctx.lineWidth = 1.5
-    ctx.strokeRect(W * 0.02, py, W * 0.12, H * 0.13)
-    // Inner panel highlight
-    ctx.strokeStyle = 'rgba(212,175,55,0.15)'
-    ctx.lineWidth = 0.8
-    ctx.strokeRect(W * 0.03, py + H * 0.01, W * 0.10, H * 0.11)
-  }
-
-  // ── RIGHT WALL ─────────────────────────────────────────────────────────
-  const wallRG = ctx.createLinearGradient(W, 0, W * 0.82, 0)
-  wallRG.addColorStop(0, '#1a0535')
-  wallRG.addColorStop(1, '#3d1260')
-  ctx.fillStyle = wallRG
-  ctx.beginPath()
-  ctx.moveTo(W, 0); ctx.lineTo(W * 0.82, 0)
-  ctx.lineTo(W * 0.82, H * 0.78); ctx.lineTo(W, H)
-  ctx.closePath(); ctx.fill()
-
-  // Wall panels (right)
-  for (let p = 0; p < 4; p++) {
-    const py = H * 0.07 + p * H * 0.17
-    ctx.strokeStyle = 'rgba(212,175,55,0.35)'
-    ctx.lineWidth = 1.5
-    ctx.strokeRect(W * 0.86, py, W * 0.12, H * 0.13)
-    ctx.strokeStyle = 'rgba(212,175,55,0.15)'
-    ctx.lineWidth = 0.8
-    ctx.strokeRect(W * 0.87, py + H * 0.01, W * 0.10, H * 0.11)
-  }
-
-  // Gold pilasters
-  ;[W * 0.18, W * 0.82].forEach((px, idx) => {
-    const pg = ctx.createLinearGradient(px - 6, 0, px + 6, 0)
-    pg.addColorStop(0, 'rgba(212,175,55,0.15)')
-    pg.addColorStop(0.5, 'rgba(212,175,55,0.65)')
-    pg.addColorStop(1, 'rgba(212,175,55,0.15)')
-    ctx.fillStyle = pg
-    ctx.fillRect(px - 6, 0, 12, H * 0.82)
+  // Left wall banner — "DREAM BELIEVE ACHIEVE"
+  ctx.fillStyle = '#1a3a8f'
+  ctx.fillRect(W * 0.01, H * 0.2, W * 0.08, H * 0.45)
+  ctx.strokeStyle = '#D4AF37'; ctx.lineWidth = 2
+  ctx.strokeRect(W * 0.01, H * 0.2, W * 0.08, H * 0.45)
+  ctx.fillStyle = '#fff'; ctx.font = `bold ${Math.round(W * 0.012)}px sans-serif`
+  ctx.textAlign = 'center'
+  ;['DREAM', 'BELIEVE', 'ACHIEVE'].forEach((word, i) => {
+    ctx.fillText(word, W * 0.05, H * 0.31 + i * H * 0.13)
+  })
+  // Stars on banner
+  ;[0, 1, 2].forEach(i => {
+    ctx.fillStyle = '#D4AF37'; ctx.font = `${Math.round(W * 0.015)}px sans-serif`
+    ctx.fillText('⭐', W * 0.05, H * 0.25 + i * H * 0.13)
   })
 
-  // ── STAGE PLATFORM ─────────────────────────────────────────────────────
-  const stageTop = H * 0.24
-  const stageBot = H * 0.72
-  const stageL = W * 0.18
-  const stageR = W * 0.82
+  // Right wall banner — "PROUD OF OUR NEXTORA STARS!"
+  ctx.fillStyle = '#1a3a8f'
+  ctx.fillRect(W * 0.91, H * 0.2, W * 0.08, H * 0.45)
+  ctx.strokeStyle = '#D4AF37'; ctx.lineWidth = 2
+  ctx.strokeRect(W * 0.91, H * 0.2, W * 0.08, H * 0.45)
+  ctx.fillStyle = '#fff'; ctx.font = `bold ${Math.round(W * 0.011)}px sans-serif`
+  ;['PROUD', 'OF OUR', 'NEXTORA', 'STARS!'].forEach((word, i) => {
+    ctx.fillText(word, W * 0.95, H * 0.29 + i * H * 0.1)
+  })
+  ctx.fillStyle = '#D4AF37'; ctx.font = `${Math.round(W * 0.015)}px sans-serif`
+  ctx.fillText('⭐', W * 0.95, H * 0.25)
 
-  // Stage floor (purple/dark)
-  const sflG = ctx.createLinearGradient(0, stageTop, 0, stageBot)
-  sflG.addColorStop(0, '#1e0940')
-  sflG.addColorStop(1, '#160630')
-  ctx.fillStyle = sflG
+  // ── STAGE AREA ──────────────────────────────────────────────────────────
+  const stageTop = H * 0.14
+  const stageBot = H * 0.68
+  const stageL = W * 0.1
+  const stageR = W * 0.9
+
+  // Stage floor (royal blue)
+  const sfG = ctx.createLinearGradient(0, stageTop, 0, stageBot)
+  sfG.addColorStop(0, '#1a3a8f')
+  sfG.addColorStop(0.5, '#1e4099')
+  sfG.addColorStop(1, '#0f2060')
+  ctx.fillStyle = sfG
   ctx.fillRect(stageL, stageTop, stageR - stageL, stageBot - stageTop)
 
-  // Stage carpet (deep red/maroon strip at bottom of stage)
-  const carpG = ctx.createLinearGradient(0, stageBot - H * 0.06, 0, stageBot)
-  carpG.addColorStop(0, '#5a0a14')
-  carpG.addColorStop(1, '#3d0009')
-  ctx.fillStyle = carpG
-  ctx.fillRect(stageL, stageBot - H * 0.06, stageR - stageL, H * 0.06)
+  // Stage border gold
+  ctx.fillStyle = '#D4AF37'; ctx.fillRect(stageL, stageBot - 8, stageR - stageL, 8)
+  ctx.fillStyle = 'rgba(212,175,55,0.5)'; ctx.fillRect(stageL, stageTop, stageR - stageL, 3)
 
-  // Gold stage border top
-  ctx.fillStyle = 'rgba(212,175,55,0.9)'
-  ctx.fillRect(stageL, stageTop - 2, stageR - stageL, 3)
+  // Stage platform (raised oval/circle)
+  const platCX = W / 2, platCY = stageBot - H * 0.04
+  const platRX = W * 0.22, platRY = H * 0.045
+  const platG = ctx.createRadialGradient(platCX, platCY, 0, platCX, platCY, platRX)
+  platG.addColorStop(0, '#2855c0')
+  platG.addColorStop(1, '#1a3a8f')
+  ctx.fillStyle = platG
+  ctx.beginPath(); ctx.ellipse(platCX, platCY, platRX, platRY, 0, 0, Math.PI * 2); ctx.fill()
+  ctx.strokeStyle = '#D4AF37'; ctx.lineWidth = 3
+  ctx.beginPath(); ctx.ellipse(platCX, platCY, platRX, platRY, 0, 0, Math.PI * 2); ctx.stroke()
 
-  // ── RED VELVET CURTAINS ─────────────────────────────────────────────────
-  const curtW = W * 0.085
-  const curtainDraw = (x0: number, x1: number) => {
-    const folds = 10
-    for (let i = 0; i < folds; i++) {
-      const t = i / (folds - 1)
-      const brightness = 0.25 + (Math.sin(t * Math.PI * folds) * 0.5 + 0.5) * 0.35
-      ctx.fillStyle = `rgb(${Math.round(brightness * 160)},${Math.round(brightness * 8)},${Math.round(brightness * 8)})`
-      ctx.fillRect(x0 + (x1 - x0) * t, stageTop, (x1 - x0) / folds + 1, stageBot - stageTop - H * 0.06)
-    }
-    // Gold fringe along bottom
-    ctx.fillStyle = 'rgba(212,175,55,0.7)'
-    ctx.fillRect(x0, stageBot - H * 0.065, x1 - x0, 4)
-    // Gold tassel rope
-    ctx.strokeStyle = 'rgba(212,175,55,0.5)'
-    ctx.lineWidth = 2
-    ctx.beginPath()
-    ctx.moveTo((x0 + x1) / 2, stageTop + H * 0.1)
-    ctx.quadraticCurveTo(x0 + (x1 - x0) * 0.8, stageTop + H * 0.18, (x0 + x1) / 2, stageTop + H * 0.22)
-    ctx.stroke()
-  }
-  curtainDraw(stageL, stageL + curtW)
-  curtainDraw(stageR - curtW, stageR)
+  // Stage glow
+  const glowG = ctx.createRadialGradient(platCX, platCY, 0, platCX, platCY, platRX * 1.5)
+  glowG.addColorStop(0, 'rgba(100,140,255,0.25)')
+  glowG.addColorStop(1, 'transparent')
+  ctx.fillStyle = glowG
+  ctx.beginPath(); ctx.ellipse(platCX, platCY, platRX * 1.5, platRY * 2, 0, 0, Math.PI * 2); ctx.fill()
 
-  // Valance (ornate top border over curtains)
-  const valG = ctx.createLinearGradient(0, stageTop - 10, 0, stageTop + 30)
-  valG.addColorStop(0, '#6b0000')
-  valG.addColorStop(1, '#3d0000')
-  ctx.fillStyle = valG
-  ctx.fillRect(stageL, stageTop - 10, stageR - stageL, 36)
-  ctx.strokeStyle = 'rgba(212,175,55,0.8)'
-  ctx.lineWidth = 1.5
-  ctx.strokeRect(stageL + 2, stageTop - 8, stageR - stageL - 4, 32)
-  // Scallop edge
-  const scX = stageL + curtW; const scW = stageR - stageL - curtW * 2
-  for (let s = 0; s < 8; s++) {
-    const sx = scX + s * scW / 8
-    ctx.fillStyle = '#5a0000'
-    ctx.beginPath()
-    ctx.arc(sx + scW / 16, stageTop + 22, scW / 17, 0, Math.PI)
-    ctx.fill()
-  }
+  // Podium
+  const podX = W * 0.3, podY = stageBot - H * 0.17
+  ctx.fillStyle = '#0d2060'
+  ctx.fillRect(podX - W * 0.04, podY, W * 0.08, H * 0.1)
+  ctx.fillStyle = 'rgba(255,255,255,0.15)'
+  ctx.fillRect(podX - W * 0.04, podY, W * 0.08, H * 0.018)
+  ctx.strokeStyle = '#D4AF37'; ctx.lineWidth = 1.5
+  ctx.strokeRect(podX - W * 0.04, podY, W * 0.08, H * 0.1)
+  // School crest on podium
+  ctx.fillStyle = '#D4AF37'; ctx.font = `${Math.round(H * 0.04)}px sans-serif`
+  ctx.textAlign = 'center'; ctx.fillText('🎓', podX, podY + H * 0.065)
 
-  // ── BIG SCREEN (where BBB iframe goes) ─────────────────────────────────
-  const scrX = stageL + curtW + 4
-  const scrW = stageR - stageL - curtW * 2 - 8
-  const scrY = stageTop + 26
-  const scrH = stageBot - H * 0.065 - scrY - 4
-
-  // Outer bezel
-  ctx.fillStyle = '#0d0416'
-  ctx.fillRect(scrX - 10, scrY - 6, scrW + 20, scrH + 16)
-  ctx.strokeStyle = 'rgba(212,175,55,0.8)'
-  ctx.lineWidth = 2.5
-  ctx.strokeRect(scrX - 8, scrY - 4, scrW + 16, scrH + 12)
-  // Screen background (blue-tinted, will sit under iframe)
-  const scrBg = ctx.createLinearGradient(scrX, scrY, scrX, scrY + scrH)
-  scrBg.addColorStop(0, '#0a1040')
-  scrBg.addColorStop(1, '#060820')
-  ctx.fillStyle = scrBg
-  ctx.fillRect(scrX, scrY, scrW, scrH)
-
-  // Screen text (visible when no BBB — drawn but iframe covers it)
-  ctx.fillStyle = 'rgba(212,175,55,0.9)'
-  ctx.font = `bold ${Math.round(scrH * 0.12)}px Georgia, serif`
-  ctx.textAlign = 'center'
-  ctx.fillText('CLASS OF 2026', scrX + scrW / 2, scrY + scrH * 0.38)
-  ctx.fillStyle = 'rgba(255,255,255,0.75)'
-  ctx.font = `${Math.round(scrH * 0.07)}px Georgia, serif`
-  ctx.fillText('GRADUATION · CONGRATULATIONS!', scrX + scrW / 2, scrY + scrH * 0.54)
-  ctx.fillStyle = 'rgba(212,175,55,0.5)'
-  ctx.font = `${Math.round(scrH * 0.055)}px sans-serif`
-  ctx.fillText('UKG → Year 1  ·  Year 6 → Year 7  ·  Year 9 → Year 10', scrX + scrW / 2, scrY + scrH * 0.68)
-  ctx.textAlign = 'left'
-
-  // Screen glow spilling onto stage
-  const sGlow = ctx.createRadialGradient(scrX + scrW / 2, scrY + scrH, 0, scrX + scrW / 2, scrY + scrH, scrW * 0.6)
-  sGlow.addColorStop(0, 'rgba(80,100,220,0.3)')
-  sGlow.addColorStop(1, 'transparent')
-  ctx.fillStyle = sGlow
-  ctx.fillRect(scrX - scrW * 0.2, scrY + scrH, scrW * 1.4, H * 0.1)
-
-  // ── PODIUM (stage left) ─────────────────────────────────────────────────
-  const podX = stageL + curtW + scrW * 0.06
-  const podY = stageBot - H * 0.17
-  const podW = scrW * 0.09, podH = H * 0.1
-  const podG = ctx.createLinearGradient(podX, podY, podX + podW, podY)
-  podG.addColorStop(0, '#1e0940'); podG.addColorStop(0.5, '#2e1258'); podG.addColorStop(1, '#1e0940')
-  ctx.fillStyle = podG
-  ctx.fillRect(podX, podY, podW, podH)
-  ctx.strokeStyle = 'rgba(212,175,55,0.6)'; ctx.lineWidth = 1.5
-  ctx.strokeRect(podX, podY, podW, podH)
-  // Podium top surface
-  ctx.fillStyle = 'rgba(212,175,55,0.15)'
-  ctx.fillRect(podX - 4, podY, podW + 8, 6)
-  // Microphone
-  ctx.fillStyle = '#aaa'
-  ctx.fillRect(podX + podW / 2 - 1, podY - H * 0.035, 2, H * 0.035)
-  ctx.fillStyle = '#888'
-  ctx.beginPath()
-  ctx.arc(podX + podW / 2, podY - H * 0.037, 5, 0, Math.PI * 2)
-  ctx.fill()
-
-  // ── AUDIENCE SEATS FLOOR ───────────────────────────────────────────────
-  // Floor perspective trapezoid (terrazzo/carpet)
-  const floorG = ctx.createLinearGradient(0, stageBot, 0, H)
-  floorG.addColorStop(0, '#150830')
-  floorG.addColorStop(1, '#0d0520')
-  ctx.fillStyle = floorG
-  ctx.beginPath()
-  ctx.moveTo(0, stageBot); ctx.lineTo(W, stageBot)
-  ctx.lineTo(W, H); ctx.lineTo(0, H)
-  ctx.closePath(); ctx.fill()
-
-  // Floor grid (perspective lines)
-  ctx.strokeStyle = 'rgba(212,175,55,0.08)'; ctx.lineWidth = 0.8
-  for (let r = 0; r < 8; r++) {
-    const y = stageBot + r * (H - stageBot) / 7
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke()
-  }
-
-  // ── AUDIENCE SEAT ROWS (isometric view — drawn directly onto background) ──
-  const rowCount = 8
-  const seatCols = 22
-  const rowHeight = (H - stageBot - H * 0.04) / rowCount
-
-  for (let row = 0; row < rowCount; row++) {
-    const rowProgress = row / (rowCount - 1)
-    // Perspective: rows get wider and taller toward bottom
-    const rowY = stageBot + H * 0.02 + row * rowHeight
-    const rowScale = 0.65 + rowProgress * 0.5
-    const seatW = W * 0.033 * rowScale
-    const seatH = H * 0.055 * rowScale
-    const totalRowW = seatCols * seatW * 1.05
-    const rowStartX = (W - totalRowW) / 2
-
-    for (let col = 0; col < seatCols; col++) {
-      const seatX = rowStartX + col * seatW * 1.06
-      const seatCenterX = seatX + seatW / 2
-
-      // SEAT BACK (blue/navy gradient)
-      const seatG = ctx.createLinearGradient(seatX, rowY, seatX + seatW, rowY + seatH * 0.65)
-      seatG.addColorStop(0, '#1a3a6e')
-      seatG.addColorStop(0.4, '#1e4080')
-      seatG.addColorStop(1, '#122a52')
-      ctx.fillStyle = seatG
-      ctx.beginPath()
-      const rx = seatW * 0.18
-      ctx.roundRect(seatX + 1, rowY + seatH * 0.3, seatW - 2, seatH * 0.65, [rx, rx, 2, 2])
-      ctx.fill()
-      // Seat highlight
-      ctx.fillStyle = 'rgba(100,160,255,0.12)'
-      ctx.fillRect(seatX + 2, rowY + seatH * 0.3, seatW - 4, seatH * 0.18)
-
-      // SEAT BOTTOM (darker blue)
-      ctx.fillStyle = '#0f2040'
-      ctx.fillRect(seatX + 1, rowY + seatH * 0.92, seatW - 2, seatH * 0.12)
-
-      // GOWN (navy/dark blue) — graduate silhouette
-      const gownH = seatH * 1.05
-      const gownW = seatW * 0.72
-      const gownX = seatCenterX - gownW / 2
-      const gownY = rowY - gownH * 0.75
-
-      // Body
-      const gownG = ctx.createLinearGradient(gownX, gownY, gownX + gownW, gownY + gownH)
-      gownG.addColorStop(0, '#1a237e')
-      gownG.addColorStop(0.5, '#1e28a0')
-      gownG.addColorStop(1, '#111660')
-      ctx.fillStyle = gownG
-      ctx.beginPath()
-      ctx.roundRect(gownX, gownY + gownH * 0.3, gownW, gownH * 0.7, [gownW * 0.12, gownW * 0.12, 0, 0])
-      ctx.fill()
-
-      // Head (skin tone — varied)
-      const skinTones = ['#FDBCB4', '#F5CBA7', '#C68642', '#8D5524', '#4a2c17']
-      const skinIdx = (row * 7 + col * 3) % skinTones.length
-      ctx.fillStyle = skinTones[skinIdx]
-      ctx.beginPath()
-      ctx.arc(seatCenterX, gownY + gownH * 0.25, gownW * 0.27, 0, Math.PI * 2)
-      ctx.fill()
-
-      // Graduation cap (flat top)
-      const capY = gownY + gownH * 0.04
-      // Cap base
-      ctx.fillStyle = '#0d1550'
-      ctx.fillRect(seatCenterX - gownW * 0.32, capY + gownH * 0.06, gownW * 0.64, gownH * 0.07)
-      // Cap board (square mortarboard top)
-      ctx.fillStyle = '#1a237e'
-      ctx.fillRect(seatCenterX - gownW * 0.38, capY, gownW * 0.76, gownH * 0.07)
-      // Gold tassel
-      ctx.strokeStyle = 'rgba(212,175,55,0.85)'
-      ctx.lineWidth = 1
-      ctx.beginPath()
-      ctx.moveTo(seatCenterX + gownW * 0.2, capY)
-      ctx.lineTo(seatCenterX + gownW * 0.2, capY + gownH * 0.18)
-      ctx.stroke()
-      ctx.fillStyle = 'rgba(212,175,55,0.85)'
-      ctx.beginPath()
-      ctx.arc(seatCenterX + gownW * 0.2, capY + gownH * 0.19, 1.5, 0, Math.PI * 2)
-      ctx.fill()
-    }
-  }
-
-  // ── AISLE PATHS ───────────────────────────────────────────────────────
-  ctx.fillStyle = 'rgba(21,8,48,0.6)'
-  ctx.fillRect(W * 0.47, stageBot, W * 0.06, H - stageBot)
-
-  // ── STAGE FLOOR SPOTLIGHTS (beams from ceiling) ────────────────────────
-  ;[W * 0.3, W * 0.5, W * 0.7].forEach(sx => {
-    const beamG = ctx.createLinearGradient(sx, H * 0.02, sx, stageBot)
-    beamG.addColorStop(0, 'rgba(255,240,180,0.15)')
-    beamG.addColorStop(1, 'rgba(255,240,180,0.02)')
-    ctx.fillStyle = beamG
-    ctx.beginPath()
-    ctx.moveTo(sx - 4, H * 0.02)
-    ctx.lineTo(sx + 4, H * 0.02)
-    ctx.lineTo(sx + 40, stageBot)
-    ctx.lineTo(sx - 40, stageBot)
-    ctx.closePath()
-    ctx.fill()
+  // Balloons (left side)
+  const balloons = [
+    { x: W * 0.13, y: stageBot - H * 0.25, color: '#2563eb' },
+    { x: W * 0.16, y: stageBot - H * 0.32, color: '#D4AF37' },
+    { x: W * 0.11, y: stageBot - H * 0.18, color: '#ffffff' },
+    { x: W * 0.87, y: stageBot - H * 0.25, color: '#2563eb' },
+    { x: W * 0.84, y: stageBot - H * 0.32, color: '#D4AF37' },
+    { x: W * 0.89, y: stageBot - H * 0.18, color: '#9333ea' },
+  ]
+  balloons.forEach(b => {
+    ctx.fillStyle = b.color
+    ctx.beginPath(); ctx.ellipse(b.x, b.y, W * 0.018, H * 0.032, 0, 0, Math.PI * 2); ctx.fill()
+    ctx.strokeStyle = 'rgba(0,0,0,0.15)'; ctx.lineWidth = 1
+    ctx.beginPath(); ctx.ellipse(b.x, b.y, W * 0.018, H * 0.032, 0, 0, Math.PI * 2); ctx.stroke()
+    // String
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 1
+    ctx.beginPath(); ctx.moveTo(b.x, b.y + H * 0.032); ctx.lineTo(b.x, b.y + H * 0.08); ctx.stroke()
   })
 
-  // ── VIGNETTE ──────────────────────────────────────────────────────────
-  const vg = ctx.createRadialGradient(W / 2, H * 0.45, H * 0.25, W / 2, H * 0.45, H * 0.8)
-  vg.addColorStop(0, 'transparent')
-  vg.addColorStop(0.7, 'transparent')
-  vg.addColorStop(1, 'rgba(5,0,15,0.7)')
-  ctx.fillStyle = vg
-  ctx.fillRect(0, 0, W, H)
+  // ── SEATED AUDIENCE ─────────────────────────────────────────────────────
+  const audTop = stageBot
+  const rowCount = 6
+  const seatCols = 18
 
-  return { scrX, scrY, scrW, scrH }
+  for (let row = 0; row < rowCount; row++) {
+    const prog = row / (rowCount - 1)
+    const rowY = audTop + H * 0.04 + row * (H - audTop - H * 0.05) / rowCount
+    const scale = 0.55 + prog * 0.5
+    const rowW = W * 0.75 * (0.6 + prog * 0.4)
+    const startX = (W - rowW) / 2
+    const cols = Math.round(seatCols * (0.6 + prog * 0.4))
+    const colW = rowW / cols
+
+    for (let col = 0; col < cols; col++) {
+      const cx = startX + col * colW + colW / 2
+      const sW = colW * 0.7 * scale
+      const sH = H * 0.055 * scale
+
+      // Seat (navy/blue)
+      const sG = ctx.createLinearGradient(cx - sW / 2, rowY, cx + sW / 2, rowY + sH)
+      sG.addColorStop(0, '#1e3a8a'); sG.addColorStop(1, '#1e2d6b')
+      ctx.fillStyle = sG
+      ctx.beginPath(); ctx.roundRect(cx - sW / 2, rowY + sH * 0.3, sW, sH * 0.7, 3); ctx.fill()
+
+      // Gown
+      const gH = sH * 0.95, gW = sW * 0.65
+      ctx.fillStyle = '#1e3a8a'
+      ctx.beginPath(); ctx.roundRect(cx - gW / 2, rowY - gH * 0.55, gW, gH * 0.85, [gW * 0.15, gW * 0.15, 0, 0]); ctx.fill()
+      // Gold trim on gown
+      ctx.fillStyle = '#D4AF37'
+      ctx.fillRect(cx - gW / 2, rowY - gH * 0.55, gW, gH * 0.06)
+
+      // Head
+      const skins = ['#FDBCB4', '#F5CBA7', '#C68642', '#8D5524', '#FDBCB4']
+      ctx.fillStyle = skins[(row * 5 + col * 3) % skins.length]
+      ctx.beginPath(); ctx.arc(cx, rowY - gH * 0.62, gW * 0.26, 0, Math.PI * 2); ctx.fill()
+
+      // Cap
+      ctx.fillStyle = '#1e2d6b'
+      ctx.fillRect(cx - gW * 0.35, rowY - gH * 0.98, gW * 0.7, gH * 0.08)
+      ctx.fillRect(cx - gW * 0.42, rowY - gH * 1.02, gW * 0.84, gH * 0.07)
+      // Gold tassel
+      ctx.strokeStyle = '#D4AF37'; ctx.lineWidth = 1
+      ctx.beginPath(); ctx.moveTo(cx + gW * 0.2, rowY - gH * 1.0); ctx.lineTo(cx + gW * 0.2, rowY - gH * 0.82); ctx.stroke()
+    }
+  }
+
+  // Confetti particles
+  const confettiColors = ['#2563eb', '#D4AF37', '#ffffff', '#9333ea', '#ec4899', '#22c55e']
+  for (let i = 0; i < 80; i++) {
+    const cx = Math.random() * W
+    const cy = Math.random() * H * 0.7
+    const size = 3 + Math.random() * 6
+    ctx.fillStyle = confettiColors[Math.floor(Math.random() * confettiColors.length)]
+    ctx.save()
+    ctx.translate(cx, cy)
+    ctx.rotate(Math.random() * Math.PI)
+    ctx.fillRect(-size / 2, -size / 4, size, size / 2)
+    ctx.restore()
+  }
+
+  ctx.textAlign = 'left'
 }
 
 function useAuditoriumBg() {
   const [bgUrl, setBgUrl] = useState('')
-  const [screenRect, setScreenRect] = useState({ scrX: 0, scrY: 0, scrW: 0, scrH: 0 })
-
   useEffect(() => {
     const w = window.innerWidth, h = window.innerHeight
     const canvas = document.createElement('canvas')
     canvas.width = w; canvas.height = h
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-    const rect = paintIsometricAuditorium(ctx, w, h)
-    setScreenRect(rect)
-    setBgUrl(canvas.toDataURL('image/jpeg', 0.94))
+    paintAuditorium(ctx, w, h)
+    setBgUrl(canvas.toDataURL('image/jpeg', 0.92))
   }, [])
+  return bgUrl
+}
 
-  return { bgUrl, screenRect }
+// Confetti animation component
+function Confetti() {
+  const pieces = Array.from({ length: 30 }, (_, i) => ({
+    id: i,
+    x: Math.random() * 100,
+    color: ['#2563eb', '#D4AF37', '#fff', '#9333ea', '#ec4899'][i % 5],
+    delay: Math.random() * 3,
+    duration: 3 + Math.random() * 3,
+  }))
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
+      {pieces.map(p => (
+        <motion.div key={p.id}
+          style={{ position: 'absolute', left: `${p.x}%`, top: -20, width: 8, height: 8, background: p.color, borderRadius: 2 }}
+          animate={{ y: ['0vh', '110vh'], rotate: [0, 720], opacity: [1, 0.3] }}
+          transition={{ duration: p.duration, delay: p.delay, repeat: Infinity, ease: 'linear' }}
+        />
+      ))}
+    </div>
+  )
 }
 
 export default function AuditoriumPage() {
@@ -405,25 +281,21 @@ export default function AuditoriumPage() {
     useGraduationStore()
   const [messages, setMessages] = useState<ChatMessage[]>(DEMO_MESSAGES)
   const [input, setInput] = useState('')
-  const [chatOpen, setChatOpen] = useState(true)
   const [nameInput, setNameInput] = useState(myName || '')
   const [showNamePrompt, setShowNamePrompt] = useState(!myName)
   const chatRef = useRef<HTMLDivElement>(null)
 
-  const { bgUrl, screenRect } = useAuditoriumBg()
+  const bgUrl = useAuditoriumBg()
   const joinUrl = bbbJoinUrl || process.env.NEXT_PUBLIC_BBB_JOIN_URL || ''
 
   const sendMessage = () => {
     if (!input.trim()) return
-    setMessages(prev => [
-      ...prev,
-      {
-        id: Math.random().toString(),
-        author: myName || 'Guest',
-        text: input.trim(),
-        time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
-      },
-    ])
+    setMessages(prev => [...prev, {
+      id: Math.random().toString(),
+      author: myName || 'Guest',
+      text: input.trim(),
+      time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+    }])
     setInput('')
   }
 
@@ -432,181 +304,288 @@ export default function AuditoriumPage() {
   }, [messages])
 
   return (
-    <div className="fixed inset-0 overflow-hidden" style={{ background: '#150830' }}>
+    <div className="fixed inset-0 overflow-hidden select-none" style={{ background: '#1a3a8f' }}>
 
-      {/* Auditorium background */}
+      {/* Background */}
       {bgUrl && (
-        <div className="absolute inset-0"
-          style={{ backgroundImage: `url(${bgUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+        <div className="absolute inset-0" style={{ backgroundImage: `url(${bgUrl})`, backgroundSize: 'cover' }} />
       )}
 
-      {/* BBB iframe — positioned exactly over the painted screen */}
-      {screenRect.scrW > 0 && (
-        <div className="absolute" style={{
-          left: screenRect.scrX,
-          top: screenRect.scrY,
-          width: screenRect.scrW,
-          height: screenRect.scrH,
-          zIndex: 5,
-        }}>
-          {joinUrl ? (
-            <iframe
-              src={joinUrl}
-              className="w-full h-full"
-              allow="camera; microphone; display-capture; autoplay"
-              style={{ border: 'none', background: '#000' }}
-            />
-          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center"
-              style={{ background: 'linear-gradient(135deg,#0a1040,#060820)' }}>
-              <div className="text-center">
-                <div className="text-5xl mb-3">🎓</div>
-                <p className="text-white font-bold text-xl mb-1">CLASS OF 2026</p>
-                <p className="text-white/50 text-sm mb-3">GRADUATION · CONGRATULATIONS!</p>
-                <div className="px-4 py-2 rounded-xl mx-auto w-fit"
-                  style={{ background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.35)' }}>
-                  <p className="text-xs" style={{ color: '#D4AF37' }}>
-                    UKG → Year 1 · Year 6 → Year 7 · Year 9 → Year 10
-                  </p>
-                </div>
-                <p className="text-white/30 text-xs mt-4">Live stream will appear here</p>
-                <div className="mt-3 flex gap-2 justify-center">
-                  {['🏫', '🎓', '⭐', '🎉', '📚'].map((e, i) => (
-                    <span key={i} className="text-xl animate-bounce" style={{ animationDelay: `${i * 0.15}s` }}>{e}</span>
-                  ))}
-                </div>
+      {/* Confetti */}
+      <Confetti />
+
+      {/* BBB screen iframe — positioned over stage screen */}
+      <div className="absolute" style={{ left: '27%', top: '14%', width: '46%', height: '43%', zIndex: 5, borderRadius: 8, overflow: 'hidden' }}>
+        {joinUrl ? (
+          <iframe src={joinUrl} className="w-full h-full"
+            allow="camera; microphone; display-capture; autoplay"
+            style={{ border: 'none', background: '#000' }} />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center"
+            style={{ background: 'linear-gradient(135deg,#1a3a8f,#2563eb,#1a3a8f)' }}>
+            <div className="text-center px-4">
+              <div className="text-4xl mb-2">🎓</div>
+              <p className="text-white font-bold text-lg leading-tight">CELEBRATING</p>
+              <p className="font-black text-2xl leading-tight" style={{ color: '#D4AF37' }}>OUR STARS</p>
+              <p className="font-black text-2xl leading-tight" style={{ color: '#D4AF37' }}>OF TOMORROW</p>
+              <p className="text-white/70 text-xs mt-2">NEXTORA ACADEMY</p>
+              <p className="text-white/50 text-xs">GRADUATION CEREMONY 2026</p>
+              <div className="mt-3 flex justify-center gap-1">
+                {['⭐','🎓','⭐','🌟','⭐'].map((e,i)=>(
+                  <span key={i} className="text-lg animate-bounce" style={{ animationDelay: `${i*0.15}s` }}>{e}</span>
+                ))}
               </div>
             </div>
-          )}
+          </div>
+        )}
+      </div>
 
-          {/* Screen corner accents */}
-          {['top-0 left-0', 'top-0 right-0', 'bottom-0 left-0', 'bottom-0 right-0'].map((pos, i) => (
-            <div key={i} className={`absolute ${pos} w-3 h-3`}
-              style={{ background: '#D4AF37', boxShadow: '0 0 10px #D4AF37', opacity: 0.85 }} />
+      {/* ── TOP BAR ── */}
+      <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-3 py-2"
+        style={{ background: 'rgba(10,20,70,0.92)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(212,175,55,0.25)' }}>
+        {/* Left */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style={{ background: 'linear-gradient(135deg,#1a3a8f,#2563eb)', border: '1px solid #D4AF37' }}>🎓</div>
+            <div>
+              <p className="text-white font-bold text-xs leading-none">NEXTORA ACADEMY</p>
+              <p className="text-xs leading-none" style={{ color: '#D4AF37' }}>GRADUATION WORLD 2026</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-white/60">
+            <span className="w-2 h-2 rounded-full bg-green-400 inline-block" />
+            {attendeeCount} Users Online
+          </div>
+        </div>
+        {/* Right */}
+        <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-bold ${
+            ceremonyStatus === 'live' ? 'bg-red-500/20 border border-red-500/50 text-red-400' : 'bg-white/10 text-white/50'}`}>
+            <Radio className={`w-3 h-3 ${ceremonyStatus === 'live' ? 'animate-pulse' : ''}`} />
+            {ceremonyStatus === 'live' ? 'LIVE' : 'Soon'}
+          </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)' }}>
+            <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-xs">
+              {myName ? myName[0].toUpperCase() : '?'}
+            </div>
+            <div>
+              <p className="text-white text-xs font-semibold leading-none">{myName || 'Guest'}</p>
+              <p className="text-white/50 text-xs leading-none">Student</p>
+            </div>
+          </div>
+          <button className="p-1.5 rounded-lg text-white/40 hover:text-white/70 hover:bg-white/10"><Users className="w-4 h-4" /></button>
+          <button className="p-1.5 rounded-lg text-white/40 hover:text-white/70 hover:bg-white/10"><MessageSquare className="w-4 h-4" /></button>
+          <Link href="/lobby" className="p-1.5 rounded-lg text-white/40 hover:text-white/70 hover:bg-white/10">
+            <Home className="w-4 h-4" />
+          </Link>
+        </div>
+      </div>
+
+      {/* ── LEFT SIDEBAR — EXPLORE CAMPUS ── */}
+      <div className="absolute top-12 left-0 bottom-16 w-52 z-20 flex flex-col"
+        style={{ background: 'rgba(8,16,60,0.88)', backdropFilter: 'blur(12px)', borderRight: '1px solid rgba(212,175,55,0.15)' }}>
+        <div className="px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+          <p className="text-white font-bold text-sm tracking-wide">EXPLORE CAMPUS</p>
+        </div>
+        <div className="flex-1 overflow-y-auto py-2">
+          {ROOMS.map(room => (
+            <Link key={room.label} href={room.href}
+              className={`flex items-center gap-3 px-4 py-2.5 transition-colors ${room.active
+                ? 'text-white'
+                : 'text-white/55 hover:text-white/80 hover:bg-white/5'}`}
+              style={room.active ? { background: 'rgba(37,99,235,0.35)', borderRight: '3px solid #2563eb' } : {}}>
+              <span className="text-base w-5 text-center">{room.icon}</span>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold leading-tight truncate">{room.label}</p>
+                <p className="text-xs leading-tight opacity-50 truncate">{room.sub}</p>
+              </div>
+            </Link>
           ))}
         </div>
-      )}
 
-      {/* Floating emoji reactions */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 20 }}>
+        {/* Congratulations card */}
+        <div className="m-3 rounded-xl p-3" style={{ background: 'linear-gradient(135deg,rgba(37,99,235,0.4),rgba(147,51,234,0.3))', border: '1px solid rgba(212,175,55,0.3)' }}>
+          <p className="text-xs font-bold text-white leading-tight">Congratulations</p>
+          <p className="text-xs font-black leading-tight" style={{ color: '#D4AF37' }}>Class of 2026!</p>
+          <p className="text-lg mt-1">🎉🎓🌟</p>
+        </div>
+
+        {/* UP NEXT */}
+        <div className="mx-3 mb-3 rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <p className="text-xs font-bold text-white/60 uppercase mb-1">Up Next</p>
+          <p className="text-xs font-semibold text-white leading-tight">Graduation Ceremony</p>
+          <p className="text-xs font-bold" style={{ color: '#22c55e' }}>Live Now</p>
+          <Link href="/program" className="mt-2 block text-center py-1.5 rounded-lg text-xs font-bold text-white"
+            style={{ background: '#2563eb' }}>
+            VIEW FULL SCHEDULE
+          </Link>
+        </div>
+      </div>
+
+      {/* ── RIGHT SIDEBAR ── */}
+      <div className="absolute top-12 right-0 bottom-16 w-72 z-20 flex flex-col overflow-hidden"
+        style={{ background: 'rgba(8,16,60,0.88)', backdropFilter: 'blur(12px)', borderLeft: '1px solid rgba(212,175,55,0.15)' }}>
+
+        {/* Event Schedule */}
+        <div style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+          <div className="px-4 py-2.5 flex items-center justify-between">
+            <p className="text-white font-bold text-sm">EVENT SCHEDULE</p>
+          </div>
+          <div className="px-4 pb-3 space-y-1.5">
+            {SCHEDULE.map(s => (
+              <div key={s.time} className={`flex items-center gap-3 py-1 px-2 rounded-lg ${s.live ? 'bg-yellow-500/10' : ''}`}>
+                <span className="text-xs text-white/40 w-16 shrink-0">{s.time}</span>
+                <span className={`text-xs font-semibold flex-1 ${s.live ? 'text-white' : 'text-white/55'}`}>{s.title}</span>
+                {s.live && <span className="text-xs font-bold px-1.5 py-0.5 rounded-full bg-red-500 text-white">LIVE</span>}
+              </div>
+            ))}
+          </div>
+          <Link href="/program" className="block text-center text-xs font-semibold pb-2.5" style={{ color: '#2563eb' }}>
+            VIEW FULL SCHEDULE
+          </Link>
+        </div>
+
+        {/* Live Chat */}
+        <div className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+          <p className="text-white font-bold text-sm">LIVE CHAT</p>
+          <span className="flex items-center gap-1 text-xs text-green-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400" />{attendeeCount} online
+          </span>
+        </div>
+        <div ref={chatRef} className="flex-1 overflow-y-auto px-4 py-2 space-y-2.5" style={{ minHeight: 0 }}>
+          {messages.map(msg => (
+            <div key={msg.id}>
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-xs text-white">
+                  {msg.author[0]}
+                </div>
+                <span className="text-xs font-bold text-white/80">{msg.author}</span>
+                <span className="text-xs text-white/25">{msg.time}</span>
+              </div>
+              <p className="text-xs text-white/60 leading-relaxed pl-7">{msg.text}</p>
+            </div>
+          ))}
+        </div>
+        <div className="px-3 py-2" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+          <div className="flex gap-2">
+            <input value={input} onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && sendMessage()}
+              placeholder="Type a message…"
+              className="flex-1 px-3 py-1.5 rounded-xl text-xs text-white placeholder-white/25 outline-none"
+              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}
+            />
+            <button onClick={sendMessage} className="px-3 py-1.5 rounded-xl"
+              style={{ background: '#2563eb' }}>
+              <Send className="w-3.5 h-3.5 text-white" />
+            </button>
+          </div>
+        </div>
+
+        {/* Live Reactions */}
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+          <div className="px-4 py-2">
+            <p className="text-white font-bold text-xs">LIVE REACTIONS</p>
+            <p className="text-white/40 text-xs">Show your excitement!</p>
+          </div>
+          <div className="px-4 pb-3 grid grid-cols-4 gap-2">
+            {[['👏', 'Applause'], ['😊', 'Cheer'], ['🎉', 'Confetti'], ['❤️', 'Heart']].map(([emoji, label]) => (
+              <button key={label} onClick={() => addReaction(emoji)}
+                className="flex flex-col items-center gap-1 py-2 px-1 rounded-xl hover:bg-white/10 transition-colors active:scale-90"
+                style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+                <span className="text-xl">{emoji}</span>
+                <span className="text-xs text-white/40">{label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Auditorium Map */}
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+          <div className="px-4 py-2 flex items-center justify-between">
+            <p className="text-white font-bold text-xs">AUDITORIUM MAP</p>
+            <button className="text-white/30 hover:text-white/60"><X className="w-3.5 h-3.5" /></button>
+          </div>
+          <div className="mx-3 mb-3 rounded-xl overflow-hidden flex items-center justify-center"
+            style={{ height: 80, background: 'radial-gradient(circle,#0a1850,#060e30)', border: '1px solid rgba(37,99,235,0.3)' }}>
+            <div className="relative w-full h-full">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-16 h-16 rounded-full opacity-20" style={{ border: '2px solid #2563eb' }} />
+                <div className="absolute w-10 h-10 rounded-full opacity-30" style={{ border: '2px solid #2563eb' }} />
+              </div>
+              <div className="absolute top-2 left-8 text-xs text-white/60">Stage</div>
+              <div className="absolute bottom-2 right-8 text-xs text-white/60">Exit</div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Floating reactions */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 25 }}>
         {reactions.map(r => (
           <motion.div key={r.id}
             initial={{ opacity: 1, y: 0, scale: 1 }}
-            animate={{ opacity: 0, y: -220, scale: 1.6 }}
+            animate={{ opacity: 0, y: -200, scale: 1.8 }}
             transition={{ duration: 2.5, ease: 'easeOut' }}
-            className="absolute bottom-28 text-3xl pointer-events-none"
+            className="absolute bottom-20 text-3xl"
             style={{ left: `${r.x}vw` }}>
             {r.type}
           </motion.div>
         ))}
       </div>
 
-      {/* Top bar */}
-      <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-4 py-3"
-        style={{ background: 'rgba(10,4,30,0.75)', backdropFilter: 'blur(14px)', borderBottom: '1px solid rgba(212,175,55,0.12)' }}>
-        <div className="flex items-center gap-3">
-          <Link href="/lobby" className="text-white/40 hover:text-white/70 text-sm transition-colors">← Hall</Link>
-          <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
-            ceremonyStatus === 'live'
-              ? 'bg-red-500/20 border border-red-500/40 text-red-400'
-              : 'bg-white/5 border border-white/10 text-white/35'}`}>
-            <Radio className={`w-3 h-3 ${ceremonyStatus === 'live' ? 'animate-pulse' : ''}`} />
-            {ceremonyStatus === 'live' ? 'LIVE NOW' : ceremonyStatus === 'before' ? 'Starting Soon' : 'Ended'}
-          </div>
-          <span className="text-white/40 text-xs hidden sm:block">Nextora School · Graduation 2026</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 text-xs text-white/40">
-            <Users className="w-3.5 h-3.5" />{attendeeCount.toLocaleString()} watching
-          </div>
-          <button onClick={() => setChatOpen(v => !v)}
-            className={`p-2 rounded-lg transition-colors ${chatOpen ? 'bg-yellow-500/20 text-yellow-400' : 'text-white/40 hover:text-white/60'}`}>
-            <MessageSquare className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      {/* Reaction bar */}
-      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-30">
-        <div className="px-4 py-2 rounded-2xl flex items-center gap-1"
-          style={{ background: 'rgba(10,4,30,0.8)', backdropFilter: 'blur(14px)', border: '1px solid rgba(212,175,55,0.18)' }}>
-          {['🎓', '👏', '❤️', '🎉', '⭐', '😭', '🏆'].map(emoji => (
-            <button key={emoji} onClick={() => addReaction(emoji)}
-              className="text-xl px-1.5 py-1 rounded-lg hover:bg-white/10 active:scale-90"
-              style={{ transition: 'all 0.15s' }}>
-              {emoji}
+      {/* ── BOTTOM ACTION BAR ── */}
+      <div className="absolute bottom-0 left-52 right-72 z-30 flex items-center justify-between px-6 py-2.5"
+        style={{ background: 'rgba(8,16,60,0.92)', backdropFilter: 'blur(12px)', borderTop: '1px solid rgba(212,175,55,0.15)' }}>
+        <div className="flex items-center gap-1">
+          {[
+            [Hand, 'Raise Hand'],
+            [Smile, 'Emotes'],
+            [Eye, 'View'],
+            [Users, 'Friends'],
+            [Mic, 'Audio'],
+          ].map(([Icon, label]) => (
+            <button key={label as string}
+              className="flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-colors">
+              <Icon className="w-5 h-5" />
+              <span className="text-xs">{label as string}</span>
             </button>
           ))}
         </div>
+        <Link href="/lobby"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm"
+          style={{ background: 'linear-gradient(135deg,#D4AF37,#f0c040)', color: '#0a1440' }}>
+          <Home className="w-4 h-4" />
+          Teleport to Lobby
+        </Link>
       </div>
-
-      {/* Chat sidebar */}
-      <AnimatePresence>
-        {chatOpen && (
-          <motion.div initial={{ x: 340, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 340, opacity: 0 }}
-            className="absolute top-0 right-0 bottom-0 w-80 z-30 flex flex-col"
-            style={{ background: 'rgba(8,4,24,0.9)', backdropFilter: 'blur(16px)', borderLeft: '1px solid rgba(212,175,55,0.1)' }}>
-            <div className="px-4 py-3 flex items-center justify-between"
-              style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-              <p className="text-white font-semibold text-sm">Live Chat</p>
-              <button onClick={() => setChatOpen(false)} className="text-white/30 hover:text-white/60">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div ref={chatRef} className="flex-1 overflow-y-auto p-4 space-y-3">
-              {messages.map(msg => (
-                <div key={msg.id}>
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-xs font-semibold" style={{ color: '#D4AF37' }}>{msg.author}</span>
-                    <span className="text-xs text-white/20">{msg.time}</span>
-                  </div>
-                  <p className="text-sm text-white/65 leading-relaxed">{msg.text}</p>
-                </div>
-              ))}
-            </div>
-            <div className="p-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-              <div className="flex gap-2">
-                <input value={input} onChange={e => setInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && sendMessage()}
-                  placeholder={myName ? `Message as ${myName}…` : 'Say something…'}
-                  className="flex-1 px-3 py-2 rounded-xl text-sm text-white placeholder-white/25 outline-none"
-                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(212,175,55,0.2)' }}
-                />
-                <button onClick={sendMessage} className="px-3 py-2 rounded-xl font-bold text-sm"
-                  style={{ background: 'linear-gradient(135deg,#D4AF37,#f0d060)', color: '#0a0c1e' }}>
-                  <Send className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Name prompt */}
       <AnimatePresence>
         {showNamePrompt && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(12px)' }}>
-            <motion.div initial={{ scale: 0.9, y: 16 }} animate={{ scale: 1, y: 0 }}
+            style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)' }}>
+            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }}
               className="w-full max-w-sm rounded-3xl p-8 text-center"
-              style={{ background: 'linear-gradient(135deg,#150535,#1e0840)', border: '1px solid rgba(212,175,55,0.3)' }}>
-              <div className="text-5xl mb-4">🎓</div>
+              style={{ background: 'linear-gradient(135deg,#0a1440,#1a3a8f)', border: '2px solid rgba(212,175,55,0.4)' }}>
+              <div className="text-5xl mb-3">🎓</div>
               <h2 className="text-xl font-bold text-white mb-1">Welcome to Graduation!</h2>
-              <p className="text-white/40 text-sm mb-6">Enter your name to join the ceremony chat</p>
+              <p className="text-white/50 text-sm mb-5">Enter your name to join the celebration</p>
               <input value={nameInput} onChange={e => setNameInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && nameInput.trim() && (setMyName(nameInput.trim()), setShowNamePrompt(false))}
                 placeholder="Your name…" autoFocus
                 className="w-full px-4 py-3 rounded-xl text-white text-sm outline-none mb-3"
-                style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(212,175,55,0.3)' }}
+                style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(212,175,55,0.35)' }}
               />
-              <button
-                onClick={() => { if (nameInput.trim()) { setMyName(nameInput.trim()); setShowNamePrompt(false) } }}
+              <button onClick={() => { if (nameInput.trim()) { setMyName(nameInput.trim()); setShowNamePrompt(false) } }}
                 className="w-full py-3 rounded-xl font-bold text-sm mb-2"
-                style={{ background: 'linear-gradient(135deg,#4a1878,#D4AF37)', color: '#fff' }}>
-                Join Ceremony
+                style={{ background: 'linear-gradient(135deg,#2563eb,#D4AF37)', color: '#fff' }}>
+                Join Ceremony 🎉
               </button>
-              <button onClick={() => setShowNamePrompt(false)} className="text-xs text-white/25 hover:text-white/50">
+              <button onClick={() => setShowNamePrompt(false)} className="text-xs text-white/30 hover:text-white/60">
                 Continue as guest
               </button>
             </motion.div>
