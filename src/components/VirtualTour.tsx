@@ -198,6 +198,7 @@ function VideoLobby({
           width: '100%', height: '100%',
           objectFit: 'cover',   // fills screen without stretching
           objectPosition: 'center',
+          filter: 'contrast(1.08) saturate(1.15) brightness(1.02)',
         }}
       />
 
