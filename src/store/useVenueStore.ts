@@ -85,7 +85,7 @@ const defaultScenes: SceneConfig[] = [
     src: AUDITORIUM_IMAGE_URL,
     title: 'Graduation Ceremony Hall',
     initialYaw: 90,
-    initialPitch: 12,
+    initialPitch: 18,
     hotspots: [
       { id: 'back', label: 'Back to Lobby', sublabel: 'Exit Hall', icon: '🚪', yaw: -90, pitch: 5, action: 'scene', target: 'lobby-image', color: '#6b7280' },
     ],
@@ -98,9 +98,9 @@ export const useVenueStore = create<VenueState>()(
       scenes: defaultScenes,
       bbbUrl: '',
       bbbYaw: 90,
-      bbbPitch: 12,
-      bbbWidth: 700,
-      bbbHeight: 50,
+      bbbPitch: 18,
+      bbbWidth: 820,
+      bbbHeight: 338,
 
       updateScene: (id, updates) =>
         set((state) => ({
@@ -150,6 +150,6 @@ export const useVenueStore = create<VenueState>()(
 
       setBbbSize: (w, h) => set({ bbbWidth: w, bbbHeight: h }),
     }),
-    { name: 'venue-store-v8' }
+    { name: 'venue-store-v9' }
   )
 )
