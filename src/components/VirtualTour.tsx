@@ -16,6 +16,9 @@ function use360Viewer(
   onFrame: (project: (yaw: number, pitch: number) => { x: number; y: number; visible: boolean }) => void,
   enabled: boolean,
 ) {
+  // Keep a ref so the RAF loop always calls the latest onFrame without restarting
+  const onFrameRef = useRef(onFrame)
+  onFrameRef.current = onFrame
   const st = useRef({
     camera: null as THREE.PerspectiveCamera | null,
     renderer: null as THREE.WebGLRenderer | null,
@@ -96,7 +99,7 @@ function use360Viewer(
       camera.rotation.y = THREE.MathUtils.degToRad(-s.yaw)
       camera.rotation.x = THREE.MathUtils.degToRad(s.pitch)
       renderer.render(threeScene, camera)
-      onFrame(project)
+      onFrameRef.current(project)
     }
     animate()
 

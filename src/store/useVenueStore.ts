@@ -64,7 +64,7 @@ const defaultScenes: SceneConfig[] = [
     src: 'https://i.ibb.co/h1KSNWWV/Chat-GPT-Image-Jun-15-2026-07-34-27-AM.png',
     title: 'Graduation Ceremony Hall',
     initialYaw: 0,
-    initialPitch: 12,
+    initialPitch: 6,
     hotspots: [
       { id: 'back', label: 'Back to Lobby', sublabel: 'Exit Hall', icon: '🚪', yaw: 178, pitch: 5, action: 'scene', target: 'lobby', color: '#6b7280' },
     ],
@@ -77,9 +77,9 @@ export const useVenueStore = create<VenueState>()(
       scenes: defaultScenes,
       bbbUrl: '',
       bbbYaw: 0,
-      bbbPitch: 12,
-      bbbWidth: 520,
-      bbbHeight: 300,
+      bbbPitch: 6,
+      bbbWidth: 720,
+      bbbHeight: 405,
 
       updateScene: (id, updates) =>
         set((state) => ({
@@ -129,6 +129,6 @@ export const useVenueStore = create<VenueState>()(
 
       setBbbSize: (w, h) => set({ bbbWidth: w, bbbHeight: h }),
     }),
-    { name: 'venue-store' }
+    { name: 'venue-store-v2' }
   )
 )
