@@ -5,57 +5,14 @@ import * as THREE from 'three'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useGraduationStore } from '../store/useGraduationStore'
+import { useVenueStore, SceneId, SceneConfig, Hotspot } from '../store/useVenueStore'
 import { MessageSquare, Map, ChevronRight, Radio } from 'lucide-react'
-
-export type SceneId = 'lobby' | 'auditorium'
-
-interface Hotspot {
-  id: string
-  label: string
-  sublabel?: string
-  icon: string
-  yaw: number
-  pitch: number
-  action: 'scene' | 'route'
-  target: string
-  color: string
-}
-
-const SCENES: Record<SceneId, {
-  type: 'image' | 'video'
-  src: string
-  title: string
-  hotspots: Hotspot[]
-}> = {
-  lobby: {
-    type: 'video',
-    src: '/images/lobby-video.mp4',
-    title: 'Welcome Lobby',
-    hotspots: [
-      { id: 'aud',   label: 'Auditorium',  sublabel: 'Live Ceremony',        icon: '🎭', yaw: -163, pitch: 22, action: 'scene', target: 'auditorium',  color: '#2563eb' },
-      { id: 'grads', label: 'Graduates',   sublabel: 'Wall of Fame',         icon: '🎓', yaw: -110, pitch: 22, action: 'route', target: '/graduates',  color: '#9333ea' },
-      { id: 'photo', label: 'Photo Booth', sublabel: 'Capture Memories',     icon: '📷', yaw:  -72, pitch: 22, action: 'route', target: '/photo-booth',color: '#ec4899' },
-      { id: 'prog',  label: 'Programme',   sublabel: "Today's Schedule",     icon: '📋', yaw:   73, pitch: 22, action: 'route', target: '/program',    color: '#22c55e' },
-      { id: 'awd',   label: 'Awards Hall', sublabel: 'Celebrate Excellence', icon: '🏆', yaw:  113, pitch: 22, action: 'route', target: '/graduates',  color: '#D4AF37' },
-      { id: 'mem',   label: 'Memory Lane', sublabel: 'Our Journey',          icon: '❤️', yaw:  164, pitch: 22, action: 'route', target: '/networking', color: '#ef4444' },
-    ],
-  },
-  auditorium: {
-    type: 'image',
-    src: 'https://i.ibb.co/h1KSNWWV/Chat-GPT-Image-Jun-15-2026-07-34-27-AM.png',
-    title: 'Graduation Ceremony Hall',
-    hotspots: [
-      { id: 'back', label: 'Back to Lobby', sublabel: 'Exit Hall', icon: '🚪', yaw: 178, pitch: 5, action: 'scene', target: 'lobby', color: '#6b7280' },
-    ],
-  },
-}
 
 // ── Core 360° viewer ──────────────────────────────────────────────────────────
 function use360Viewer(
   canvasRef: React.RefObject<HTMLCanvasElement>,
-  scene: SceneId,
+  sceneConfig: SceneConfig,
   onReady: () => void,
-  // Callback to update hotspot DOM elements each frame (stable, no React re-renders)
   onFrame: (project: (yaw: number, pitch: number) => { x: number; y: number; visible: boolean }) => void,
 ) {
   const st = useRef({
@@ -63,12 +20,13 @@ function use360Viewer(
     renderer: null as THREE.WebGLRenderer | null,
     dragging: false,
     lastX: 0, lastY: 0,
-    yaw: 0, pitch: 0,
-    targetYaw: 0, targetPitch: 0,
+    yaw: sceneConfig.initialYaw,
+    pitch: sceneConfig.initialPitch,
+    targetYaw: sceneConfig.initialYaw,
+    targetPitch: sceneConfig.initialPitch,
     fov: 80,
   })
 
-  // World-space projection — no drift, matches sphere exactly
   const project = useCallback((hotYaw: number, hotPitch: number) => {
     const s = st.current
     if (!s.camera) return { x: 0, y: 0, visible: false }
@@ -89,7 +47,11 @@ function use360Viewer(
     const canvas = canvasRef.current
     if (!canvas) return
     const s = st.current
-    s.yaw = 0; s.pitch = 0; s.targetYaw = 0; s.targetPitch = 0
+    // Reset camera to scene initial direction
+    s.yaw = sceneConfig.initialYaw
+    s.pitch = sceneConfig.initialPitch
+    s.targetYaw = sceneConfig.initialYaw
+    s.targetPitch = sceneConfig.initialPitch
 
     const W = window.innerWidth, H = window.innerHeight
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true })
@@ -105,12 +67,9 @@ function use360Viewer(
     const geo = new THREE.SphereGeometry(500, 80, 60)
     geo.scale(-1, 1, 1)
 
-    const sceneConfig = SCENES[scene]
-
     let texture: THREE.Texture
 
     if (sceneConfig.type === 'video') {
-      // Video texture — plays inside the sphere
       const vid = document.createElement('video')
       vid.src = sceneConfig.src
       vid.loop = true; vid.muted = true; vid.playsInline = true
@@ -118,8 +77,7 @@ function use360Viewer(
       vid.play().catch(() => {})
       texture = new THREE.VideoTexture(vid)
       texture.colorSpace = THREE.SRGBColorSpace
-      const mat = new THREE.MeshBasicMaterial({ map: texture })
-      threeScene.add(new THREE.Mesh(geo, mat))
+      threeScene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: texture })))
       onReady()
     } else {
       const loader = new THREE.TextureLoader()
@@ -152,7 +110,6 @@ function use360Viewer(
       camera.rotation.x = THREE.MathUtils.degToRad(s.pitch)
       if (texture instanceof THREE.VideoTexture) texture.needsUpdate = true
       renderer.render(threeScene, camera)
-      // Update hotspot positions via direct DOM — bypasses React, zero jitter
       onFrame(project)
     }
     animate()
@@ -201,7 +158,7 @@ function use360Viewer(
       canvas.removeEventListener('wheel', onWheel)
       window.removeEventListener('resize', onResize)
     }
-  }, [scene])
+  }, [sceneConfig.id, sceneConfig.src])
 
   return { stRef: st, project }
 }
@@ -211,13 +168,13 @@ const TIPS: Record<SceneId, string[]> = {
   lobby: [
     'Welcome! 🎓 Drag to look around the full 360° lobby!',
     'Click AUDITORIUM to enter the ceremony hall and watch the live stream!',
-    'Visit GRADUATES for the Wall of Fame — click to share!',
+    'Visit HALL OF FAME to see all our graduating stars!',
     'Check PROGRAMME for today\'s full schedule. 📋',
   ],
   auditorium: [
-    'Drag to look around! 🎉 The live stream plays on the big screen ahead.',
+    'You\'re facing the stage! 🎉 The live stream is playing on the big screen ahead.',
     'Audio from the ceremony continues even when you look away!',
-    'Look straight ahead to watch the graduation ceremony on stage.',
+    'Drag to explore the hall — look behind you to exit back to the lobby.',
     'React with the emoji buttons below! 👏🎓',
   ],
 }
@@ -269,25 +226,21 @@ const SCHEDULE = [
 // ── Main Virtual Tour ─────────────────────────────────────────────────────────
 export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
   const router = useRouter()
-  const { myName, attendeeCount, bbbJoinUrl, ceremonyStatus, reactions, addReaction } =
-    useGraduationStore()
+  const { myName, attendeeCount, ceremonyStatus, reactions, addReaction } = useGraduationStore()
+  const { scenes, bbbUrl, bbbYaw, bbbPitch, bbbWidth, bbbHeight } = useVenueStore()
 
   const [scene, setScene]         = useState<SceneId>(initialScene)
   const [loading, setLoading]     = useState(true)
   const [transitioning, setTrans] = useState(false)
   const [showPanel, setShowPanel] = useState(false)
 
-  const canvasRef   = useRef<HTMLCanvasElement>(null)
-  // Refs for hotspot DOM elements — updated each frame without React re-renders
-  const hsRefs      = useRef<{ [key: string]: HTMLDivElement | null }>({})
-  // Ref for BBB screen overlay div
-  const bbbRef      = useRef<HTMLDivElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const hsRefs    = useRef<{ [key: string]: HTMLDivElement | null }>({})
+  const bbbRef    = useRef<HTMLDivElement>(null)
 
-  const cur = SCENES[scene]
+  const cur = scenes.find(s => s.id === scene) ?? scenes[0]
 
-  // Called every animation frame — updates hotspot & BBB positions via direct DOM
   const onFrame = useCallback((project: (y: number, p: number) => { x: number; y: number; visible: boolean }) => {
-    // Update hotspots
     cur.hotspots.forEach(hs => {
       const el = hsRefs.current[hs.id]
       if (!el) return
@@ -300,9 +253,8 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
         el.style.display = 'none'
       }
     })
-    // Update BBB screen position (auditorium only)
     if (bbbRef.current && scene === 'auditorium') {
-      const pos = project(0, 12) // screen is dead centre, slightly above horizon
+      const pos = project(bbbYaw, bbbPitch)
       if (pos.visible) {
         bbbRef.current.style.display = 'block'
         bbbRef.current.style.left = pos.x + '%'
@@ -311,16 +263,21 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
         bbbRef.current.style.display = 'none'
       }
     }
-  }, [scene, cur.hotspots])
+  }, [scene, cur.hotspots, bbbYaw, bbbPitch])
 
-  const { stRef } = use360Viewer(canvasRef, scene, () => setLoading(false), onFrame)
+  const { stRef } = use360Viewer(canvasRef, cur, () => setLoading(false), onFrame)
 
   const goScene = (id: string) => {
     if (transitioning || id === scene) return
     setTrans(true); setLoading(true)
     setTimeout(() => {
-      setScene(id as SceneId)
-      stRef.current.targetYaw = 0; stRef.current.targetPitch = 0
+      const targetScene = id as SceneId
+      const targetConfig = scenes.find(s => s.id === targetScene)
+      if (targetConfig) {
+        stRef.current.targetYaw   = targetConfig.initialYaw
+        stRef.current.targetPitch = targetConfig.initialPitch
+      }
+      setScene(targetScene)
       setTrans(false)
     }, 500)
   }
@@ -353,7 +310,7 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
         )}
       </AnimatePresence>
 
-      {/* ── HOTSPOTS — pure DOM positioning, zero React re-renders, zero jitter ── */}
+      {/* ── HOTSPOTS — direct DOM, zero React re-renders ── */}
       {cur.hotspots.map(hs => (
         <div
           key={hs.id}
@@ -363,20 +320,16 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
           <button
             onClick={() => handleHotspot(hs)}
             className="flex flex-col items-center gap-1 group relative">
-            {/* Pulse ring — CSS animation only, no JS */}
             <span className="absolute rounded-full pointer-events-none animate-ping"
               style={{ width: 48, height: 48, top: -4, left: -4, background: hs.color, opacity: 0.4 }} />
-            {/* Button */}
             <div className="relative w-10 h-10 rounded-full flex items-center justify-center text-xl z-10 shadow-2xl transition-transform duration-150 group-hover:scale-125"
               style={{ background: hs.color, border: '3px solid white', boxShadow: `0 0 22px ${hs.color}` }}>
               {hs.icon}
             </div>
-            {/* Label */}
             <div className="px-2.5 py-0.5 rounded-lg text-xs font-bold text-white whitespace-nowrap shadow-lg"
               style={{ background: 'rgba(8,16,60,0.92)', border: `1px solid ${hs.color}80`, backdropFilter: 'blur(8px)' }}>
               {hs.label}
             </div>
-            {/* Sublabel on hover */}
             {hs.sublabel && (
               <div className="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-3 py-1.5 rounded-xl text-center whitespace-nowrap"
                 style={{ background: 'rgba(8,16,60,0.97)', border: `1px solid ${hs.color}`, boxShadow: `0 0 14px ${hs.color}60` }}>
@@ -388,42 +341,42 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
         </div>
       ))}
 
-      {/* ── BBB SCREEN — pinned to stage in auditorium, audio always plays ── */}
-      <div
-        ref={bbbRef}
-        className="absolute z-10 pointer-events-auto"
-        style={{
-          display: scene === 'auditorium' ? 'none' : 'none',
-          transform: 'translate(-50%,-50%)',
-          width: 520, height: 300,
-          borderRadius: 12,
-          overflow: 'hidden',
-          border: '3px solid rgba(212,175,55,0.8)',
-          boxShadow: '0 0 60px rgba(37,99,235,0.6), 0 0 20px rgba(212,175,55,0.4)',
-        }}>
-        {bbbJoinUrl ? (
-          /* iframe always mounted when in auditorium — audio plays even off-screen */
-          <iframe
-            src={bbbJoinUrl}
-            className="w-full h-full"
-            allow="camera; microphone; display-capture; autoplay"
-            style={{ border: 'none' }}
-          />
-        ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center text-center px-6"
-            style={{ background: 'linear-gradient(135deg,#060e30,#0f2060,#060e30)' }}>
-            <div className="text-4xl mb-2">🎓</div>
-            <p className="text-white font-bold">NEXTORA ACADEMY</p>
-            <p className="font-black text-2xl" style={{ color: '#D4AF37' }}>GRADUATION CEREMONY 2026</p>
-            <p className="text-white/30 text-xs mt-3">Live stream will appear here</p>
-            <p className="text-white/20 text-xs">Celebrating Excellence · Inspiring Futures</p>
-          </div>
-        )}
-        {/* Gold corner accents */}
-        {['top-0 left-0','top-0 right-0','bottom-0 left-0','bottom-0 right-0'].map((c,i)=>(
-          <div key={i} className={`absolute ${c} w-3 h-3`} style={{ background:'#D4AF37', boxShadow:'0 0 8px #D4AF37' }} />
-        ))}
-      </div>
+      {/* ── BBB SCREEN — always mounted in auditorium so audio persists ── */}
+      {scene === 'auditorium' && (
+        <div
+          ref={bbbRef}
+          className="absolute z-10 pointer-events-auto"
+          style={{
+            display: 'none',
+            transform: 'translate(-50%,-50%)',
+            width: bbbWidth, height: bbbHeight,
+            borderRadius: 12,
+            overflow: 'hidden',
+            border: '3px solid rgba(212,175,55,0.8)',
+            boxShadow: '0 0 60px rgba(37,99,235,0.6), 0 0 20px rgba(212,175,55,0.4)',
+          }}>
+          {bbbUrl ? (
+            <iframe
+              src={bbbUrl}
+              className="w-full h-full"
+              allow="camera; microphone; display-capture; autoplay"
+              style={{ border: 'none' }}
+            />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center text-center px-6"
+              style={{ background: 'linear-gradient(135deg,#060e30,#0f2060,#060e30)' }}>
+              <div className="text-4xl mb-2">🎓</div>
+              <p className="text-white font-bold">NEXTORA ACADEMY</p>
+              <p className="font-black text-2xl" style={{ color: '#D4AF37' }}>GRADUATION CEREMONY 2026</p>
+              <p className="text-white/30 text-xs mt-3">Live stream will appear here</p>
+              <p className="text-white/20 text-xs">Set BBB URL in admin panel to go live</p>
+            </div>
+          )}
+          {['top-0 left-0','top-0 right-0','bottom-0 left-0','bottom-0 right-0'].map((c,i) => (
+            <div key={i} className={`absolute ${c} w-3 h-3`} style={{ background: '#D4AF37', boxShadow: '0 0 8px #D4AF37' }} />
+          ))}
+        </div>
+      )}
 
       {/* TOP BAR */}
       <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-4 py-2.5"
@@ -475,7 +428,6 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
         ))}
       </div>
 
-      {/* Drag hint */}
       {!loading && (
         <p className="absolute top-14 left-1/2 -translate-x-1/2 z-10 text-xs text-white/40 px-3 py-1 rounded-full pointer-events-none"
           style={{ background: 'rgba(0,0,0,0.3)' }}>
@@ -483,10 +435,9 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
         </p>
       )}
 
-      {/* Tour guide */}
       {!loading && <TourGuide scene={scene} />}
 
-      {/* Reactions */}
+      {/* Reactions bar */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30">
         <div className="flex items-center gap-1 px-3 py-2 rounded-2xl"
           style={{ background: 'rgba(8,16,60,0.88)', backdropFilter: 'blur(14px)', border: '1px solid rgba(212,175,55,0.18)' }}>
