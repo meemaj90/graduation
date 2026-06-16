@@ -6,14 +6,15 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useGraduationStore } from '../store/useGraduationStore'
 import { useVenueStore, SceneId, SceneConfig, Hotspot } from '../store/useVenueStore'
-import { MessageSquare, Map, ChevronRight, Radio } from 'lucide-react'
+import { Map, ChevronRight, Radio, Volume2, VolumeX } from 'lucide-react'
 
-// ── Core 360° viewer ──────────────────────────────────────────────────────────
+// ── 360° viewer — used only for image scenes (auditorium) ────────────────────
 function use360Viewer(
   canvasRef: React.RefObject<HTMLCanvasElement>,
   sceneConfig: SceneConfig,
   onReady: () => void,
   onFrame: (project: (yaw: number, pitch: number) => { x: number; y: number; visible: boolean }) => void,
+  enabled: boolean,
 ) {
   const st = useRef({
     camera: null as THREE.PerspectiveCamera | null,
@@ -24,7 +25,7 @@ function use360Viewer(
     pitch: sceneConfig.initialPitch,
     targetYaw: sceneConfig.initialYaw,
     targetPitch: sceneConfig.initialPitch,
-    fov: 80,
+    fov: 75,
   })
 
   const project = useCallback((hotYaw: number, hotPitch: number) => {
@@ -44,10 +45,10 @@ function use360Viewer(
   }, [])
 
   useEffect(() => {
+    if (!enabled) return
     const canvas = canvasRef.current
     if (!canvas) return
     const s = st.current
-    // Reset camera to scene initial direction
     s.yaw = sceneConfig.initialYaw
     s.pitch = sceneConfig.initialPitch
     s.targetYaw = sceneConfig.initialYaw
@@ -67,39 +68,25 @@ function use360Viewer(
     const geo = new THREE.SphereGeometry(500, 80, 60)
     geo.scale(-1, 1, 1)
 
-    let texture: THREE.Texture
-
-    if (sceneConfig.type === 'video') {
-      const vid = document.createElement('video')
-      vid.src = sceneConfig.src
-      vid.loop = true; vid.muted = true; vid.playsInline = true
-      vid.crossOrigin = 'anonymous'
-      vid.play().catch(() => {})
-      texture = new THREE.VideoTexture(vid)
-      texture.colorSpace = THREE.SRGBColorSpace
-      threeScene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: texture })))
-      onReady()
-    } else {
-      const loader = new THREE.TextureLoader()
-      loader.crossOrigin = 'anonymous'
-      loader.load(
-        sceneConfig.src,
-        (tex) => {
-          tex.colorSpace = THREE.SRGBColorSpace
-          tex.minFilter = THREE.LinearMipmapLinearFilter
-          tex.magFilter = THREE.LinearFilter
-          tex.anisotropy = renderer.capabilities.getMaxAnisotropy()
-          tex.generateMipmaps = true
-          threeScene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: tex })))
-          onReady()
-        },
-        undefined,
-        () => {
-          threeScene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0x1a3a8f })))
-          onReady()
-        },
-      )
-    }
+    const loader = new THREE.TextureLoader()
+    loader.crossOrigin = 'anonymous'
+    loader.load(
+      sceneConfig.src,
+      (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace
+        tex.minFilter = THREE.LinearMipmapLinearFilter
+        tex.magFilter = THREE.LinearFilter
+        tex.anisotropy = renderer.capabilities.getMaxAnisotropy()
+        tex.generateMipmaps = true
+        threeScene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: tex })))
+        onReady()
+      },
+      undefined,
+      () => {
+        threeScene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0x1a3a8f })))
+        onReady()
+      },
+    )
 
     let rafId = 0
     const animate = () => {
@@ -108,7 +95,6 @@ function use360Viewer(
       s.pitch += (s.targetPitch - s.pitch) * 0.12
       camera.rotation.y = THREE.MathUtils.degToRad(-s.yaw)
       camera.rotation.x = THREE.MathUtils.degToRad(s.pitch)
-      if (texture instanceof THREE.VideoTexture) texture.needsUpdate = true
       renderer.render(threeScene, camera)
       onFrame(project)
     }
@@ -158,17 +144,122 @@ function use360Viewer(
       canvas.removeEventListener('wheel', onWheel)
       window.removeEventListener('resize', onResize)
     }
-  }, [sceneConfig.id, sceneConfig.src])
+  }, [sceneConfig.id, sceneConfig.src, enabled])
 
   return { stRef: st, project }
+}
+
+// ── Video Lobby — full-bleed video with overlay hotspots ─────────────────────
+// Hotspot screen positions (% from left, % from top) for the lobby layout.
+// Spread across the width at a natural eye level.
+const LOBBY_HOTSPOT_SCREEN: Record<string, { x: number; y: number }> = {
+  aud:   { x: 14, y: 52 },
+  grads: { x: 28, y: 52 },
+  photo: { x: 42, y: 52 },
+  prog:  { x: 58, y: 52 },
+  awd:   { x: 72, y: 52 },
+  mem:   { x: 86, y: 52 },
+}
+
+function VideoLobby({
+  src, hotspots, onHotspot, muted, onToggleMute,
+}: {
+  src: string
+  hotspots: Hotspot[]
+  onHotspot: (hs: Hotspot) => void
+  muted: boolean
+  onToggleMute: () => void
+}) {
+  const vidRef = useRef<HTMLVideoElement>(null)
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    const vid = vidRef.current
+    if (!vid) return
+    vid.muted = muted
+  }, [muted])
+
+  return (
+    <div className="absolute inset-0">
+      {/* Full-bleed video — object-fit cover keeps correct aspect ratio */}
+      <video
+        ref={vidRef}
+        src={src}
+        autoPlay
+        loop
+        muted        // start muted (browser policy), user can unmute
+        playsInline
+        onCanPlay={() => setLoaded(true)}
+        style={{
+          position: 'absolute', inset: 0,
+          width: '100%', height: '100%',
+          objectFit: 'cover',   // fills screen without stretching
+          objectPosition: 'center',
+        }}
+      />
+
+      {/* Subtle dark vignette so hotspots are readable */}
+      <div className="absolute inset-0 pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.55) 100%)' }} />
+      {/* Bottom gradient for bottom bar legibility */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
+        style={{ background: 'linear-gradient(to top, rgba(8,16,60,0.8), transparent)' }} />
+      {/* Top gradient */}
+      <div className="absolute top-0 left-0 right-0 h-20 pointer-events-none"
+        style={{ background: 'linear-gradient(to bottom, rgba(8,16,60,0.6), transparent)' }} />
+
+      {/* Hotspots — fixed positions spread across the screen */}
+      {loaded && hotspots.map((hs, i) => {
+        const pos = LOBBY_HOTSPOT_SCREEN[hs.id] ?? { x: 15 + i * 15, y: 55 }
+        return (
+          <motion.div
+            key={hs.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.08 }}
+            className="absolute"
+            style={{ left: `${pos.x}%`, top: `${pos.y}%`, transform: 'translate(-50%,-50%)' }}>
+            <button
+              onClick={() => onHotspot(hs)}
+              className="flex flex-col items-center gap-1 group relative">
+              <span className="absolute rounded-full pointer-events-none animate-ping"
+                style={{ width: 48, height: 48, top: -4, left: -4, background: hs.color, opacity: 0.35 }} />
+              <div className="relative w-10 h-10 rounded-full flex items-center justify-center text-xl z-10 shadow-2xl transition-transform duration-150 group-hover:scale-125"
+                style={{ background: hs.color, border: '3px solid white', boxShadow: `0 0 22px ${hs.color}` }}>
+                {hs.icon}
+              </div>
+              <div className="px-2.5 py-0.5 rounded-lg text-xs font-bold text-white whitespace-nowrap shadow-lg"
+                style={{ background: 'rgba(8,16,60,0.92)', border: `1px solid ${hs.color}80`, backdropFilter: 'blur(8px)' }}>
+                {hs.label}
+              </div>
+              {hs.sublabel && (
+                <div className="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-3 py-1.5 rounded-xl text-center whitespace-nowrap"
+                  style={{ background: 'rgba(8,16,60,0.97)', border: `1px solid ${hs.color}`, boxShadow: `0 0 14px ${hs.color}60` }}>
+                  <p className="text-white text-xs font-bold">{hs.label}</p>
+                  <p className="text-xs" style={{ color: hs.color }}>{hs.sublabel}</p>
+                </div>
+              )}
+            </button>
+          </motion.div>
+        )
+      })}
+
+      {/* Mute toggle */}
+      <button onClick={onToggleMute}
+        className="absolute bottom-20 right-4 z-30 w-10 h-10 rounded-full flex items-center justify-center text-white/70 hover:text-white transition-colors"
+        style={{ background: 'rgba(8,16,60,0.7)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}>
+        {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+      </button>
+    </div>
+  )
 }
 
 // ── Tour Guide ────────────────────────────────────────────────────────────────
 const TIPS: Record<SceneId, string[]> = {
   lobby: [
-    'Welcome! 🎓 Drag to look around the full 360° lobby!',
-    'Click AUDITORIUM to enter the ceremony hall and watch the live stream!',
-    'Visit HALL OF FAME to see all our graduating stars!',
+    'Welcome to Nextora Academy! 🎓 Click any hotspot to explore.',
+    'Head to AUDITORIUM to watch the live graduation ceremony!',
+    'Visit HALL OF FAME to see all our graduating stars and leave wishes!',
     'Check PROGRAMME for today\'s full schedule. 📋',
   ],
   auditorium: [
@@ -233,13 +324,16 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
   const [loading, setLoading]     = useState(true)
   const [transitioning, setTrans] = useState(false)
   const [showPanel, setShowPanel] = useState(false)
+  const [muted, setMuted]         = useState(true)
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const hsRefs    = useRef<{ [key: string]: HTMLDivElement | null }>({})
   const bbbRef    = useRef<HTMLDivElement>(null)
 
   const cur = scenes.find(s => s.id === scene) ?? scenes[0]
+  const isVideoLobby = cur.type === 'video'
 
+  // onFrame only used for the 360° sphere (auditorium)
   const onFrame = useCallback((project: (y: number, p: number) => { x: number; y: number; visible: boolean }) => {
     cur.hotspots.forEach(hs => {
       const el = hsRefs.current[hs.id]
@@ -265,7 +359,13 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
     }
   }, [scene, cur.hotspots, bbbYaw, bbbPitch])
 
-  const { stRef } = use360Viewer(canvasRef, cur, () => setLoading(false), onFrame)
+  // 360° viewer only active for image scenes
+  const { stRef } = use360Viewer(canvasRef, cur, () => setLoading(false), onFrame, !isVideoLobby)
+
+  // Lobby video loads instantly
+  useEffect(() => {
+    if (isVideoLobby) setLoading(false)
+  }, [isVideoLobby])
 
   const goScene = (id: string) => {
     if (transitioning || id === scene) return
@@ -273,7 +373,7 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
     setTimeout(() => {
       const targetScene = id as SceneId
       const targetConfig = scenes.find(s => s.id === targetScene)
-      if (targetConfig) {
+      if (targetConfig && targetConfig.type !== 'video') {
         stRef.current.targetYaw   = targetConfig.initialYaw
         stRef.current.targetPitch = targetConfig.initialPitch
       }
@@ -290,8 +390,26 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
   return (
     <div className="fixed inset-0 overflow-hidden bg-black select-none">
 
-      {/* 360° canvas */}
-      <canvas ref={canvasRef} style={{ display: 'block', cursor: 'grab', touchAction: 'none' }} />
+      {/* VIDEO LOBBY — natural full-bleed, correct aspect ratio */}
+      {isVideoLobby && (
+        <VideoLobby
+          src={cur.src}
+          hotspots={cur.hotspots}
+          onHotspot={handleHotspot}
+          muted={muted}
+          onToggleMute={() => setMuted(m => !m)}
+        />
+      )}
+
+      {/* 360° CANVAS — only for image scenes (auditorium) */}
+      <canvas
+        ref={canvasRef}
+        style={{
+          display: isVideoLobby ? 'none' : 'block',
+          cursor: 'grab',
+          touchAction: 'none',
+        }}
+      />
 
       {/* Loading overlay */}
       <AnimatePresence>
@@ -310,16 +428,14 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
         )}
       </AnimatePresence>
 
-      {/* ── HOTSPOTS — direct DOM, zero React re-renders ── */}
-      {cur.hotspots.map(hs => (
+      {/* HOTSPOTS for 360° scenes — direct DOM positioning */}
+      {!isVideoLobby && cur.hotspots.map(hs => (
         <div
           key={hs.id}
           ref={el => { hsRefs.current[hs.id] = el }}
           className="absolute z-20 pointer-events-auto"
           style={{ display: 'none', transform: 'translate(-50%,-50%)' }}>
-          <button
-            onClick={() => handleHotspot(hs)}
-            className="flex flex-col items-center gap-1 group relative">
+          <button onClick={() => handleHotspot(hs)} className="flex flex-col items-center gap-1 group relative">
             <span className="absolute rounded-full pointer-events-none animate-ping"
               style={{ width: 48, height: 48, top: -4, left: -4, background: hs.color, opacity: 0.4 }} />
             <div className="relative w-10 h-10 rounded-full flex items-center justify-center text-xl z-10 shadow-2xl transition-transform duration-150 group-hover:scale-125"
@@ -341,27 +457,19 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
         </div>
       ))}
 
-      {/* ── BBB SCREEN — always mounted in auditorium so audio persists ── */}
+      {/* BBB SCREEN — auditorium only */}
       {scene === 'auditorium' && (
-        <div
-          ref={bbbRef}
-          className="absolute z-10 pointer-events-auto"
+        <div ref={bbbRef} className="absolute z-10 pointer-events-auto"
           style={{
-            display: 'none',
-            transform: 'translate(-50%,-50%)',
+            display: 'none', transform: 'translate(-50%,-50%)',
             width: bbbWidth, height: bbbHeight,
-            borderRadius: 12,
-            overflow: 'hidden',
+            borderRadius: 12, overflow: 'hidden',
             border: '3px solid rgba(212,175,55,0.8)',
             boxShadow: '0 0 60px rgba(37,99,235,0.6), 0 0 20px rgba(212,175,55,0.4)',
           }}>
           {bbbUrl ? (
-            <iframe
-              src={bbbUrl}
-              className="w-full h-full"
-              allow="camera; microphone; display-capture; autoplay"
-              style={{ border: 'none' }}
-            />
+            <iframe src={bbbUrl} className="w-full h-full"
+              allow="camera; microphone; display-capture; autoplay" style={{ border: 'none' }} />
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center text-center px-6"
               style={{ background: 'linear-gradient(135deg,#060e30,#0f2060,#060e30)' }}>
@@ -428,13 +536,6 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
         ))}
       </div>
 
-      {!loading && (
-        <p className="absolute top-14 left-1/2 -translate-x-1/2 z-10 text-xs text-white/40 px-3 py-1 rounded-full pointer-events-none"
-          style={{ background: 'rgba(0,0,0,0.3)' }}>
-          👆 Drag to look around · Scroll to zoom
-        </p>
-      )}
-
       {!loading && <TourGuide scene={scene} />}
 
       {/* Reactions bar */}
@@ -482,8 +583,8 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
             <div className="p-3 space-y-1" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
               <p className="text-white/40 text-xs font-bold uppercase mb-2">Explore Campus</p>
               {[
-                { label: 'Lobby',       icon: '🏛️', fn: () => { goScene('lobby'); setShowPanel(false) } },
-                { label: 'Auditorium',  icon: '🎭', fn: () => { goScene('auditorium'); setShowPanel(false) } },
+                { label: 'Lobby',      icon: '🏛️', fn: () => { goScene('lobby'); setShowPanel(false) } },
+                { label: 'Auditorium', icon: '🎭', fn: () => { goScene('auditorium'); setShowPanel(false) } },
               ].map(r => (
                 <button key={r.label} onClick={r.fn}
                   className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-white/55 hover:text-white hover:bg-white/5 transition-colors">
