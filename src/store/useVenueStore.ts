@@ -98,9 +98,9 @@ export const useVenueStore = create<VenueState>()(
       scenes: defaultScenes,
       bbbUrl: '',
       bbbYaw: 0,
-      bbbPitch: 6,
-      bbbWidth: 720,
-      bbbHeight: 405,
+      bbbPitch: 9,
+      bbbWidth: 700,
+      bbbHeight: 250,
 
       updateScene: (id, updates) =>
         set((state) => ({
@@ -150,6 +150,6 @@ export const useVenueStore = create<VenueState>()(
 
       setBbbSize: (w, h) => set({ bbbWidth: w, bbbHeight: h }),
     }),
-    { name: 'venue-store-v5' }
+    { name: 'venue-store-v6' }
   )
 )
