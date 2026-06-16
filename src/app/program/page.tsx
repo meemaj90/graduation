@@ -1,209 +1,80 @@
 'use client'
 
-import { useState } from 'react'
-import { motion } from 'framer-motion'
-import { Calendar, Download, Printer, Clock, User } from 'lucide-react'
-import Navigation from '@/components/Navigation'
 import { useGraduationStore } from '@/store/useGraduationStore'
-import { ProgramItem } from '@/types'
-
-function generateICS(items: ProgramItem[]): string {
-  const ceremonyDate = process.env.NEXT_PUBLIC_CEREMONY_DATE || '2026-07-15T10:00:00'
-  const baseDate = new Date(ceremonyDate)
-
-  const parseTime = (timeStr: string, base: Date): Date => {
-    const d = new Date(base)
-    const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i)
-    if (!match) return d
-    let hours = parseInt(match[1])
-    const minutes = parseInt(match[2])
-    const period = match[3].toUpperCase()
-    if (period === 'PM' && hours !== 12) hours += 12
-    if (period === 'AM' && hours === 12) hours = 0
-    d.setHours(hours, minutes, 0, 0)
-    return d
-  }
-
-  const formatDT = (d: Date) =>
-    d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
-
-  const events = items.map((item) => {
-    const start = parseTime(item.time, baseDate)
-    const end = new Date(start.getTime() + item.duration * 60 * 1000)
-    return [
-      'BEGIN:VEVENT',
-      `DTSTART:${formatDT(start)}`,
-      `DTEND:${formatDT(end)}`,
-      `SUMMARY:${item.title}`,
-      `DESCRIPTION:${item.description.replace(/\n/g, '\\n')} — Speaker: ${item.speaker}`,
-      `ORGANIZER;CN=Excellence University:mailto:ceremony@excellence.edu`,
-      'END:VEVENT',
-    ].join('\r\n')
-  }).join('\r\n')
-
-  return [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//Excellence University//Graduation 2026//EN',
-    'CALSCALE:GREGORIAN',
-    'METHOD:PUBLISH',
-    events,
-    'END:VCALENDAR',
-  ].join('\r\n')
-}
 
 export default function ProgramPage() {
-  const { programItems, currentProgramItemIndex } = useGraduationStore()
-  const [highlighted, setHighlighted] = useState<string | null>(null)
-
-  const currentItem = programItems[currentProgramItemIndex]
-
-  const handleDownloadCalendar = () => {
-    const ics = generateICS(programItems)
-    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'graduation-2026.ics'
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  const handlePrint = () => window.print()
+  const { programItems } = useGraduationStore()
 
   return (
-    <div className="min-h-screen bg-navy">
-      <Navigation />
-      <div className="pt-24 pb-16 px-4 max-w-3xl mx-auto">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-10"
-        >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-gold mb-4">
-            <Calendar className="w-4 h-4 text-gold" />
-            <span className="text-xs font-semibold text-gold uppercase tracking-widest">July 15, 2026</span>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#0a1628 0%,#0d1f4c 50%,#0a1628 100%)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 16px 60px' }}>
+      {/* Booklet */}
+      <div style={{ width: '100%', maxWidth: 720, background: 'linear-gradient(170deg,#fdf8ef 0%,#f5ead5 40%,#fdf3e0 100%)', borderRadius: 8, boxShadow: '0 8px 60px rgba(0,0,0,0.6), 0 0 0 1px #c8a84b55', overflow: 'hidden', fontFamily: 'Georgia, "Times New Roman", serif' }}>
+
+        {/* Gold top bar */}
+        <div style={{ height: 10, background: 'linear-gradient(90deg,#8b6914,#D4AF37,#FFD700,#D4AF37,#8b6914)' }} />
+
+        {/* Header section */}
+        <div style={{ background: 'linear-gradient(160deg,#0a2472,#0d1f5c,#081848)', padding: '40px 48px 36px', textAlign: 'center', position: 'relative' }}>
+          {/* Corner ornaments */}
+          {['topleft','topright','botleft','botright'].map((pos) => (
+            <div key={pos} style={{ position: 'absolute', width: 32, height: 32, top: pos.startsWith('top') ? 12 : undefined, bottom: pos.startsWith('bot') ? 12 : undefined, left: pos.endsWith('left') ? 12 : undefined, right: pos.endsWith('right') ? 12 : undefined, borderTop: pos.startsWith('top') ? '2px solid #D4AF37' : 'none', borderBottom: pos.startsWith('bot') ? '2px solid #D4AF37' : 'none', borderLeft: pos.endsWith('left') ? '2px solid #D4AF37' : 'none', borderRight: pos.endsWith('right') ? '2px solid #D4AF37' : 'none' }} />
+          ))}
+          <div style={{ fontSize: 11, letterSpacing: 4, color: '#D4AF37', textTransform: 'uppercase', marginBottom: 12, fontFamily: 'Georgia,serif' }}>Nextora Academy</div>
+          <div style={{ fontSize: 13, letterSpacing: 2, color: '#D4AF37aa', marginBottom: 8, fontFamily: 'Georgia,serif' }}>Presents</div>
+          <div style={{ fontSize: 32, fontWeight: 700, color: '#FFD700', letterSpacing: 2, textShadow: '0 2px 16px #D4AF3780', marginBottom: 6 }}>GRADUATION CEREMONY</div>
+          <div style={{ fontSize: 17, color: '#D4AF37cc', letterSpacing: 1, marginBottom: 4 }}>2025 / 2026 Academic Session</div>
+          <div style={{ color: '#ffffff88', fontSize: 13, marginTop: 16, letterSpacing: 1 }}>UKG → Year 1 &nbsp;|&nbsp; Year 6 → Year 7 &nbsp;|&nbsp; Year 9 → Year 10</div>
+        </div>
+
+        {/* Gold divider */}
+        <div style={{ height: 6, background: 'linear-gradient(90deg,#8b6914,#D4AF37,#FFD700,#D4AF37,#8b6914)' }} />
+
+        {/* Programme body */}
+        <div style={{ padding: '36px 48px 48px' }}>
+          <div style={{ textAlign: 'center', marginBottom: 32 }}>
+            <div style={{ fontSize: 9, letterSpacing: 5, textTransform: 'uppercase', color: '#8b6914', marginBottom: 6 }}>Order of Events</div>
+            <div style={{ height: 1, background: 'linear-gradient(90deg,transparent,#D4AF37,transparent)' }} />
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-3">
-            Ceremony <span className="gold-text">Program</span>
-          </h1>
-          <p className="text-white/50">Follow the schedule of events for Graduation 2026</p>
-        </motion.div>
 
-        {/* Action buttons */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="flex flex-wrap gap-3 justify-center mb-10"
-        >
-          <button
-            onClick={handleDownloadCalendar}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl glass border border-white/10 text-sm text-white/70 hover:text-white hover:border-gold/30 transition-all"
-          >
-            <Download className="w-4 h-4" />
-            Add to Calendar
-          </button>
-          <button
-            onClick={handlePrint}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl glass border border-white/10 text-sm text-white/70 hover:text-white hover:border-gold/30 transition-all"
-          >
-            <Printer className="w-4 h-4" />
-            Print Program
-          </button>
-        </motion.div>
+          {/* Programme items */}
+          <div>
+            {programItems.map((item, i) => (
+              <div key={item.id} style={{ display: 'flex', gap: 20, marginBottom: 28, paddingBottom: 28, borderBottom: i < programItems.length - 1 ? '1px solid #D4AF3730' : 'none' }}>
+                {/* Time column */}
+                <div style={{ minWidth: 72, textAlign: 'right', paddingTop: 2 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#8b6914', letterSpacing: 0.5 }}>{item.time}</div>
+                  <div style={{ fontSize: 10, color: '#8b691488', marginTop: 2 }}>{item.duration} min</div>
+                </div>
 
-        {/* Timeline */}
-        <div className="relative">
-          {/* Vertical line */}
-          <div className="absolute left-8 top-0 bottom-0 w-px bg-gradient-to-b from-gold/40 via-gold/20 to-transparent" />
+                {/* Dot + line */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 6 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'linear-gradient(135deg,#D4AF37,#FFD700)', boxShadow: '0 0 0 3px #D4AF3720', flexShrink: 0 }} />
+                  <div style={{ flex: 1, width: 1, background: 'linear-gradient(#D4AF3740,transparent)', marginTop: 4 }} />
+                </div>
 
-          <div className="space-y-2">
-            {programItems.map((item: ProgramItem, i: number) => {
-              const isCurrent = item.id === currentItem?.id
-              const isPast = i < currentProgramItemIndex
-              const isHighlighted = highlighted === item.id
+                {/* Content */}
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#1a1005', marginBottom: 4, lineHeight: 1.3 }}>{item.title}</div>
+                  {item.speaker && (
+                    <div style={{ fontSize: 12, color: '#8b6914', fontStyle: 'italic', marginBottom: 6 }}>{item.speaker}</div>
+                  )}
+                  <div style={{ fontSize: 13, color: '#4a3a1e', lineHeight: 1.7 }}>{item.description}</div>
+                </div>
+              </div>
+            ))}
+          </div>
 
-              return (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.06 }}
-                  onClick={() => setHighlighted(isHighlighted ? null : item.id)}
-                  className={`relative pl-20 cursor-pointer group transition-all duration-200`}
-                >
-                  {/* Time bubble */}
-                  <div className={`absolute left-0 top-4 w-16 h-16 rounded-full flex items-center justify-center text-center border-2 transition-all duration-200
-                    ${isCurrent
-                      ? 'border-gold bg-gold/20 shadow-[0_0_20px_rgba(212,175,55,0.4)]'
-                      : isPast
-                      ? 'border-white/20 bg-white/5'
-                      : 'border-white/10 bg-navy'
-                    } ${isHighlighted ? 'scale-110' : 'group-hover:scale-105'}`}
-                  >
-                    <div className="text-center">
-                      <div className={`text-[10px] font-bold leading-tight ${isCurrent ? 'text-gold' : isPast ? 'text-white/30' : 'text-white/50'}`}>
-                        {item.time.split(' ')[0]}
-                      </div>
-                      <div className={`text-[9px] ${isCurrent ? 'text-gold/70' : 'text-white/20'}`}>
-                        {item.time.split(' ')[1]}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Content card */}
-                  <div className={`rounded-2xl p-5 border transition-all duration-200 mb-3
-                    ${isCurrent
-                      ? 'glass-gold border-gold/30 shadow-[0_0_30px_rgba(212,175,55,0.08)]'
-                      : isPast
-                      ? 'border-white/5 bg-white/2 opacity-60'
-                      : 'glass border-white/5 group-hover:border-gold/20'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-3 mb-2">
-                      <h3 className={`font-semibold text-base leading-tight ${isCurrent ? 'text-gold' : isPast ? 'text-white/40' : 'text-white'}`}>
-                        {item.title}
-                        {isCurrent && (
-                          <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/30 text-[10px] text-red-400 font-bold uppercase">
-                            <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
-                            Now
-                          </span>
-                        )}
-                      </h3>
-                      <div className="flex items-center gap-1 text-xs text-white/30 flex-shrink-0">
-                        <Clock className="w-3 h-3" />
-                        <span>{item.duration}m</span>
-                      </div>
-                    </div>
-
-                    {item.speaker && (
-                      <div className="flex items-center gap-1.5 text-xs text-gold/60 mb-2">
-                        <User className="w-3 h-3" />
-                        <span>{item.speaker}</span>
-                      </div>
-                    )}
-
-                    <p className={`text-sm leading-relaxed ${isPast ? 'text-white/25' : 'text-white/50'}`}>
-                      {item.description}
-                    </p>
-                  </div>
-                </motion.div>
-              )
-            })}
+          {/* Footer note */}
+          <div style={{ marginTop: 16, padding: '16px 24px', background: '#D4AF3712', border: '1px solid #D4AF3730', borderRadius: 4, textAlign: 'center' }}>
+            <div style={{ fontSize: 11, color: '#8b6914', fontStyle: 'italic', lineHeight: 1.7 }}>
+              Times are approximate and may be subject to adjustment on the day.<br />
+              All guests are kindly requested to be seated by 9:15 AM.
+            </div>
           </div>
         </div>
 
-        {/* Footer note */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          className="text-center text-xs text-white/20 mt-10"
-        >
-          Times are approximate and subject to change. All times in local time.
-        </motion.p>
+        {/* Gold bottom bar */}
+        <div style={{ height: 10, background: 'linear-gradient(90deg,#8b6914,#D4AF37,#FFD700,#D4AF37,#8b6914)' }} />
       </div>
     </div>
   )

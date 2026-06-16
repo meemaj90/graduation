@@ -58,6 +58,9 @@ interface GraduationState {
   addGraduate: (graduate: Graduate) => void
   deleteGraduate: (id: string) => void
   addCongratulatoryMessage: (graduateId: string, msg: Omit<CongratulatoryMessage, 'id'>) => void
+  addProgramItem: (item: ProgramItem) => void
+  updateProgramItem: (id: string, updates: Partial<ProgramItem>) => void
+  deleteProgramItem: (id: string) => void
   loginAdmin: (password: string) => boolean
   logoutAdmin: () => void
   // Avatar actions
@@ -157,6 +160,19 @@ export const useGraduationStore = create<GraduationState>()(
                 }
               : g
           ),
+        })),
+
+      addProgramItem: (item) =>
+        set((state) => ({ programItems: [...state.programItems, item] })),
+
+      updateProgramItem: (id, updates) =>
+        set((state) => ({
+          programItems: state.programItems.map((p) => p.id === id ? { ...p, ...updates } : p),
+        })),
+
+      deleteProgramItem: (id) =>
+        set((state) => ({
+          programItems: state.programItems.filter((p) => p.id !== id),
         })),
 
       loginAdmin: (password: string): boolean => {

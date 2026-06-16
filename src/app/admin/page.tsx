@@ -1,8 +1,9 @@
 'use client'
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Lock, Settings, Users, Radio, Link as LinkIcon, Trash2, Plus, LogOut, ChevronRight, Mic, Map, Camera, Edit2, Save, X } from 'lucide-react'
+import { Lock, Settings, Users, Radio, Link as LinkIcon, Trash2, Plus, LogOut, ChevronRight, Mic, Map, Camera, Edit2, Save, X, Clock } from 'lucide-react'
 import { useGraduationStore } from '../../store/useGraduationStore'
+import { ProgramItem } from '../../types'
 import { useVenueStore, SceneId } from '../../store/useVenueStore'
 import { useHallStore, HofGraduate } from '../../store/useHallStore'
 
@@ -393,6 +394,118 @@ function HallTab() {
   )
 }
 
+// ── Programme Tab ─────────────────────────────────────────────────────────────
+function ProgrammeTab() {
+  const { programItems, addProgramItem, updateProgramItem, deleteProgramItem } = useGraduationStore()
+  const [editing, setEditing] = useState<string | null>(null)
+  const [editData, setEditData] = useState<Partial<ProgramItem>>({})
+  const [adding, setAdding] = useState(false)
+  const [newData, setNewData] = useState<Partial<ProgramItem>>({})
+
+  const startEdit = (item: ProgramItem) => { setEditing(item.id); setEditData({ ...item }) }
+  const saveEdit = () => { if (editing) { updateProgramItem(editing, editData); setEditing(null) } }
+
+  const saveNew = () => {
+    if (!newData.title || !newData.time) return
+    addProgramItem({
+      id: `prog-${Date.now()}`,
+      time: newData.time ?? '',
+      title: newData.title ?? '',
+      speaker: newData.speaker ?? '',
+      description: newData.description ?? '',
+      duration: Number(newData.duration) || 15,
+    })
+    setAdding(false); setNewData({})
+  }
+
+  const Field = ({ label, val, onChange, type = 'text' }: { label: string; val: string; onChange: (v: string) => void; type?: string }) => (
+    <div>
+      <label className="text-xs text-white/40 uppercase tracking-wider">{label}</label>
+      <input type={type} value={val} onChange={e => onChange(e.target.value)}
+        className="w-full mt-0.5 px-3 py-2 rounded-xl text-sm text-white outline-none"
+        style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }} />
+    </div>
+  )
+
+  const TextArea = ({ label, val, onChange }: { label: string; val: string; onChange: (v: string) => void }) => (
+    <div>
+      <label className="text-xs text-white/40 uppercase tracking-wider">{label}</label>
+      <textarea value={val} onChange={e => onChange(e.target.value)} rows={3}
+        className="w-full mt-0.5 px-3 py-2 rounded-xl text-sm text-white outline-none resize-none"
+        style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }} />
+    </div>
+  )
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-white/50 text-sm">{programItems.length} programme items</p>
+        <button onClick={() => setAdding(true)}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold"
+          style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.4)', color: '#D4AF37' }}>
+          <Plus className="w-4 h-4" /> Add Item
+        </button>
+      </div>
+
+      {adding && (
+        <div className="rounded-2xl p-5 space-y-3" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(212,175,55,0.3)' }}>
+          <p className="text-white font-semibold">New Programme Item</p>
+          <div className="grid grid-cols-3 gap-3">
+            <Field label="Time *" val={newData.time ?? ''} onChange={v => setNewData(d => ({ ...d, time: v }))} />
+            <Field label="Duration (min)" val={String(newData.duration ?? '')} onChange={v => setNewData(d => ({ ...d, duration: Number(v) }))} type="number" />
+            <Field label="Speaker" val={newData.speaker ?? ''} onChange={v => setNewData(d => ({ ...d, speaker: v }))} />
+          </div>
+          <Field label="Title *" val={newData.title ?? ''} onChange={v => setNewData(d => ({ ...d, title: v }))} />
+          <TextArea label="Description" val={newData.description ?? ''} onChange={v => setNewData(d => ({ ...d, description: v }))} />
+          <div className="flex gap-2">
+            <button onClick={saveNew} className="px-5 py-2 rounded-xl text-sm font-bold" style={{ background: '#D4AF37', color: '#0a1440' }}>Save</button>
+            <button onClick={() => { setAdding(false); setNewData({}) }} className="px-5 py-2 rounded-xl text-sm font-bold text-white/50" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {programItems.map((item, i) => (
+        <div key={item.id} className="rounded-2xl overflow-hidden"
+          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          {editing === item.id ? (
+            <div className="p-5 space-y-3">
+              <div className="grid grid-cols-3 gap-3">
+                <Field label="Time" val={editData.time ?? ''} onChange={v => setEditData(d => ({ ...d, time: v }))} />
+                <Field label="Duration (min)" val={String(editData.duration ?? '')} onChange={v => setEditData(d => ({ ...d, duration: Number(v) }))} type="number" />
+                <Field label="Speaker" val={editData.speaker ?? ''} onChange={v => setEditData(d => ({ ...d, speaker: v }))} />
+              </div>
+              <Field label="Title" val={editData.title ?? ''} onChange={v => setEditData(d => ({ ...d, title: v }))} />
+              <TextArea label="Description" val={editData.description ?? ''} onChange={v => setEditData(d => ({ ...d, description: v }))} />
+              <div className="flex gap-2">
+                <button onClick={saveEdit} className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-sm font-bold" style={{ background: '#D4AF37', color: '#0a1440' }}><Save className="w-3.5 h-3.5" /> Save</button>
+                <button onClick={() => setEditing(null)} className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-sm font-bold text-white/50" style={{ border: '1px solid rgba(255,255,255,0.1)' }}><X className="w-3.5 h-3.5" /> Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3 px-4 py-3">
+              <div className="flex items-center justify-center w-14 h-14 rounded-xl flex-shrink-0 text-center"
+                style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}>
+                <div>
+                  <div className="text-xs font-bold" style={{ color: '#D4AF37' }}>{item.time.split(' ')[0]}</div>
+                  <div className="text-[10px] text-white/30">{item.time.split(' ')[1]}</div>
+                </div>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-white text-sm font-semibold truncate">{item.title}</p>
+                <p className="text-white/40 text-xs truncate">{item.speaker ? `${item.speaker} · ` : ''}{item.duration} min</p>
+              </div>
+              <div className="flex items-center gap-1">
+                <button onClick={() => startEdit(item)} className="p-2 rounded-lg text-white/40 hover:text-white hover:bg-white/5 transition-colors"><Edit2 className="w-4 h-4" /></button>
+                <button onClick={() => deleteProgramItem(item.id)} className="p-2 rounded-lg text-red-500/40 hover:text-red-400 hover:bg-red-500/10 transition-colors"><Trash2 className="w-4 h-4" /></button>
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ── Ceremony Tab ──────────────────────────────────────────────────────────────
 function CeremonyTab() {
   const { ceremonyStatus, setCeremonyStatus, attendeeCount, setAttendeeCount,
@@ -469,16 +582,17 @@ function CeremonyTab() {
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function AdminPage() {
   const { isAdminAuthenticated, loginAdmin, logoutAdmin } = useGraduationStore()
-  const [tab, setTab] = useState<'ceremony' | 'venue' | 'hall'>('ceremony')
+  const [tab, setTab] = useState<'ceremony' | 'venue' | 'hall' | 'programme'>('ceremony')
 
   if (!isAdminAuthenticated) {
     return <LoginScreen onLogin={(pw) => loginAdmin(pw)} />
   }
 
   const TABS = [
-    { id: 'ceremony' as const, label: 'Ceremony', icon: '🎓' },
-    { id: 'venue' as const,    label: 'Venue & Hotspots', icon: '🗺️' },
-    { id: 'hall' as const,     label: 'Hall of Fame', icon: '🏆' },
+    { id: 'ceremony' as const,   label: 'Ceremony', icon: '🎓' },
+    { id: 'venue' as const,      label: 'Venue & Hotspots', icon: '🗺️' },
+    { id: 'hall' as const,       label: 'Hall of Fame', icon: '🏆' },
+    { id: 'programme' as const,  label: 'Programme', icon: '📋' },
   ]
 
   return (
@@ -512,9 +626,10 @@ export default function AdminPage() {
           ))}
         </div>
 
-        {tab === 'ceremony' && <CeremonyTab />}
-        {tab === 'venue'    && <VenueTab />}
-        {tab === 'hall'     && <HallTab />}
+        {tab === 'ceremony'   && <CeremonyTab />}
+        {tab === 'venue'      && <VenueTab />}
+        {tab === 'hall'       && <HallTab />}
+        {tab === 'programme'  && <ProgrammeTab />}
       </div>
     </div>
   )
