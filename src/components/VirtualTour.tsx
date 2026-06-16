@@ -334,6 +334,9 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
   const [transitioning, setTrans] = useState(false)
   const [showPanel, setShowPanel] = useState(false)
   const [muted, setMuted]         = useState(true)
+  const [showCalib, setShowCalib] = useState(false)
+  const [calibYaw, setCalibYaw]   = useState(0)
+  const [calibPitch, setCalibPitch] = useState(0)
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const hsRefs    = useRef<{ [key: string]: HTMLDivElement | null }>({})
@@ -366,6 +369,8 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
         bbbRef.current.style.display = 'none'
       }
     }
+    setCalibYaw(Math.round(stRef.current.yaw))
+    setCalibPitch(Math.round(stRef.current.pitch))
   }, [scene, cur.hotspots, bbbYaw, bbbPitch])
 
   // 360° viewer only active for image scenes
@@ -530,6 +535,12 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
             className={`p-2 rounded-lg ${showPanel ? 'bg-yellow-500/20 text-yellow-400' : 'text-white/40 hover:text-white/70'}`}>
             <Map className="w-4 h-4" />
           </button>
+          {!isVideoLobby && (
+            <button onClick={() => setShowCalib(v => !v)}
+              className={`px-2 py-1.5 rounded-lg text-xs font-bold ${showCalib ? 'bg-yellow-500/20 text-yellow-400' : 'text-white/40 hover:text-white/70'}`}>
+              📐 Calibrate
+            </button>
+          )}
           <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full"
             style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)' }}>
             <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center text-xs text-white">
@@ -555,6 +566,24 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
       </div>
 
       {!loading && <TourGuide scene={scene} />}
+
+      {/* Calibration HUD — drag to center crosshair on the target, read off yaw/pitch */}
+      {showCalib && !isVideoLobby && (
+        <>
+          <div className="absolute top-1/2 left-1/2 z-40 pointer-events-none"
+            style={{ transform: 'translate(-50%,-50%)' }}>
+            <div style={{ width: 28, height: 28, position: 'relative' }}>
+              <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 2, background: '#FFD700', transform: 'translateY(-1px)' }} />
+              <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 2, background: '#FFD700', transform: 'translateX(-1px)' }} />
+            </div>
+          </div>
+          <div className="absolute top-24 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-xl text-center"
+            style={{ background: 'rgba(8,16,60,0.95)', border: '1px solid #FFD700' }}>
+            <p className="text-white text-xs">Drag until the gold crosshair sits at the exact center of the screen, then read these values:</p>
+            <p className="font-bold text-lg" style={{ color: '#FFD700' }}>Yaw: {calibYaw}° &nbsp; Pitch: {calibPitch}°</p>
+          </div>
+        </>
+      )}
 
       {/* Reactions bar */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30">
