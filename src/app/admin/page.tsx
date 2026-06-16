@@ -50,7 +50,7 @@ function VenueTab() {
     updateScene, updateHotspot, addHotspot, removeHotspot,
     setBbbUrl, setBbbPosition, setBbbSize } = useVenueStore()
 
-  const [selectedScene, setSelectedScene] = useState<SceneId>('lobby')
+  const [selectedScene, setSelectedScene] = useState<SceneId>('lobby' as SceneId)
   const [bbbInput, setBbbInput] = useState(bbbUrl)
   const [bbbYawI, setBbbYawI] = useState(String(bbbYaw))
   const [bbbPitchI, setBbbPitchI] = useState(String(bbbPitch))
@@ -78,11 +78,11 @@ function VenueTab() {
       <div className="rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}>
         <h3 className="text-white font-semibold mb-3 flex items-center gap-2"><Map className="w-4 h-4" style={{ color: '#D4AF37' }} /> Scenes</h3>
         <div className="flex gap-2 mb-4">
-          {(['lobby','auditorium'] as SceneId[]).map(s => (
+          {(['lobby','lobby-image','auditorium'] as SceneId[]).map(s => (
             <button key={s} onClick={() => setSelectedScene(s)}
               className={`px-4 py-2 rounded-xl text-xs font-bold capitalize transition-all ${selectedScene === s ? 'text-white' : 'text-white/40 hover:text-white/70'}`}
               style={selectedScene === s ? { background: 'rgba(212,175,55,0.2)', border: '1px solid #D4AF37' } : { border: '1px solid rgba(255,255,255,0.1)' }}>
-              {s === 'lobby' ? '🏛️ Lobby' : '🎭 Auditorium'}
+              {s === 'lobby' ? '🏛️ Video Lobby' : s === 'lobby-image' ? '🏛️ Image Lobby' : '🎭 Auditorium'}
             </button>
           ))}
         </div>

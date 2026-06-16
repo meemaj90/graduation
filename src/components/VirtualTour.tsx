@@ -265,6 +265,11 @@ const TIPS: Record<SceneId, string[]> = {
     'Visit HALL OF FAME to see all our graduating stars and leave wishes!',
     'Check PROGRAMME for today\'s full schedule. 📋',
   ],
+  'lobby-image': [
+    'Welcome back to the lobby! 🏛️ Explore using the hotspots around you.',
+    'Visit the HELP DESK straight ahead for assistance — we\'re on WhatsApp!',
+    'Drag to look around the lobby and click any door to explore.',
+  ],
   auditorium: [
     'You\'re facing the stage! 🎉 The live stream is playing on the big screen ahead.',
     'Audio from the ceremony continues even when you look away!',
@@ -387,6 +392,7 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
 
   const handleHotspot = (hs: Hotspot) => {
     if (hs.action === 'scene') goScene(hs.target)
+    else if (hs.action === 'external') window.open(hs.target, '_blank', 'noopener,noreferrer')
     else router.push(hs.target)
   }
 
@@ -471,8 +477,13 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
             boxShadow: '0 0 60px rgba(37,99,235,0.6), 0 0 20px rgba(212,175,55,0.4)',
           }}>
           {bbbUrl ? (
-            <iframe src={bbbUrl} className="w-full h-full"
-              allow="camera; microphone; display-capture; autoplay" style={{ border: 'none' }} />
+            <iframe
+              src={bbbUrl}
+              className="w-full h-full"
+              allow="camera; microphone; display-capture; autoplay; fullscreen"
+              allowFullScreen
+              style={{ border: 'none' }}
+            />
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center text-center px-6"
               style={{ background: 'linear-gradient(135deg,#060e30,#0f2060,#060e30)' }}>
@@ -530,13 +541,16 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
 
       {/* Scene tabs */}
       <div className="absolute top-14 left-4 z-20 flex gap-2">
-        {(['lobby','auditorium'] as SceneId[]).map(s => (
-          <button key={s} onClick={() => goScene(s)}
-            className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${scene === s ? 'text-white' : 'text-white/40 hover:text-white/70'}`}
-            style={scene === s ? { background: 'rgba(37,99,235,0.55)', border: '1px solid #2563eb' } : {}}>
-            {s === 'lobby' ? '🏛️ Lobby' : '🎭 Auditorium'}
-          </button>
-        ))}
+        {([['lobby','🏛️ Lobby'],['auditorium','🎭 Auditorium']] as [SceneId,string][]).map(([s,label]) => {
+          const isActive = scene === s || (s === 'lobby' && scene === 'lobby-image')
+          return (
+            <button key={s} onClick={() => goScene(s)}
+              className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${isActive ? 'text-white' : 'text-white/40 hover:text-white/70'}`}
+              style={isActive ? { background: 'rgba(37,99,235,0.55)', border: '1px solid #2563eb' } : {}}>
+              {label}
+            </button>
+          )
+        })}
       </div>
 
       {!loading && <TourGuide scene={scene} />}
@@ -586,7 +600,7 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
             <div className="p-3 space-y-1" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
               <p className="text-white/40 text-xs font-bold uppercase mb-2">Explore Campus</p>
               {[
-                { label: 'Lobby',      icon: '🏛️', fn: () => { goScene('lobby'); setShowPanel(false) } },
+                { label: 'Lobby',      icon: '🏛️', fn: () => { goScene(scene === 'auditorium' ? 'lobby-image' : 'lobby'); setShowPanel(false) } },
                 { label: 'Auditorium', icon: '🎭', fn: () => { goScene('auditorium'); setShowPanel(false) } },
               ].map(r => (
                 <button key={r.label} onClick={r.fn}

@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-export type SceneId = 'lobby' | 'auditorium'
+export type SceneId = 'lobby' | 'lobby-image' | 'auditorium'
 
 export interface Hotspot {
   id: string
@@ -10,7 +10,7 @@ export interface Hotspot {
   icon: string
   yaw: number
   pitch: number
-  action: 'scene' | 'route'
+  action: 'scene' | 'route' | 'external'
   target: string
   color: string
 }
@@ -41,6 +41,10 @@ interface VenueState {
   setBbbSize: (w: number, h: number) => void
 }
 
+// PASTE YOUR IMGBB URLS HERE (or update via Admin → Venue tab):
+const LOBBY_IMAGE_URL = 'PASTE_LOBBY_IMAGE_IMGBB_URL_HERE'
+const AUDITORIUM_IMAGE_URL = 'PASTE_AUDITORIUM_IMAGE_IMGBB_URL_HERE'
+
 const defaultScenes: SceneConfig[] = [
   {
     id: 'lobby',
@@ -50,23 +54,40 @@ const defaultScenes: SceneConfig[] = [
     initialYaw: 0,
     initialPitch: 0,
     hotspots: [
-      { id: 'aud',   label: 'Auditorium',  sublabel: 'Live Ceremony',        icon: '🎭', yaw: -163, pitch: 22, action: 'scene', target: 'auditorium',   color: '#2563eb' },
-      { id: 'grads', label: 'Hall of Fame', sublabel: 'Wall of Fame',        icon: '🎓', yaw: -110, pitch: 22, action: 'route', target: '/graduates',   color: '#9333ea' },
-      { id: 'photo', label: 'Photo Booth', sublabel: 'Capture Memories',     icon: '📷', yaw:  -72, pitch: 22, action: 'route', target: '/photo-booth', color: '#ec4899' },
-      { id: 'prog',  label: 'Programme',   sublabel: "Today's Schedule",     icon: '📋', yaw:   73, pitch: 22, action: 'route', target: '/program',     color: '#22c55e' },
-      { id: 'awd',   label: 'Awards Hall', sublabel: 'Celebrate Excellence', icon: '🏆', yaw:  113, pitch: 22, action: 'route', target: '/graduates',   color: '#D4AF37' },
-      { id: 'mem',   label: 'Memory Lane', sublabel: 'Our Journey',          icon: '❤️', yaw:  164, pitch: 22, action: 'route', target: '/networking',  color: '#ef4444' },
+      { id: 'aud',   label: 'Auditorium',   sublabel: 'Live Ceremony',        icon: '🎭', yaw: -163, pitch: 22, action: 'scene', target: 'auditorium',   color: '#2563eb' },
+      { id: 'grads', label: 'Hall of Fame', sublabel: 'Wall of Fame',         icon: '🎓', yaw: -110, pitch: 22, action: 'route', target: '/graduates',   color: '#9333ea' },
+      { id: 'photo', label: 'Photo Booth',  sublabel: 'Capture Memories',     icon: '📷', yaw:  -72, pitch: 22, action: 'route', target: '/photo-booth', color: '#ec4899' },
+      { id: 'prog',  label: 'Programme',    sublabel: "Today's Schedule",     icon: '📋', yaw:   73, pitch: 22, action: 'route', target: '/program',     color: '#22c55e' },
+      { id: 'awd',   label: 'Awards Hall',  sublabel: 'Celebrate Excellence', icon: '🏆', yaw:  113, pitch: 22, action: 'route', target: '/graduates',   color: '#D4AF37' },
+      { id: 'mem',   label: 'Memory Lane',  sublabel: 'Our Journey',          icon: '❤️', yaw:  164, pitch: 22, action: 'route', target: '/networking',  color: '#ef4444' },
+    ],
+  },
+  {
+    id: 'lobby-image',
+    type: 'image',
+    src: LOBBY_IMAGE_URL,
+    title: 'Welcome Lobby',
+    initialYaw: 0,
+    initialPitch: 0,
+    hotspots: [
+      { id: 'helpdesk', label: 'Help Desk',     sublabel: 'Chat with us on WhatsApp', icon: '💬', yaw: 0,    pitch: -8, action: 'external', target: 'https://wa.me/1234567890', color: '#25D366' },
+      { id: 'aud2',     label: 'Auditorium',    sublabel: 'Live Ceremony',            icon: '🎭', yaw: -150, pitch: 10, action: 'scene',    target: 'auditorium',              color: '#2563eb' },
+      { id: 'grads2',   label: 'Hall of Fame',  sublabel: 'Wall of Fame',             icon: '🎓', yaw: -100, pitch: 10, action: 'route',    target: '/graduates',              color: '#9333ea' },
+      { id: 'photo2',   label: 'Photo Booth',   sublabel: 'Capture Memories',         icon: '📷', yaw:  -50, pitch: 10, action: 'route',    target: '/photo-booth',            color: '#ec4899' },
+      { id: 'prog2',    label: 'Programme',     sublabel: "Today's Schedule",         icon: '📋', yaw:   60, pitch: 10, action: 'route',    target: '/program',                color: '#22c55e' },
+      { id: 'awd2',     label: 'Awards Hall',   sublabel: 'Celebrate Excellence',     icon: '🏆', yaw:  110, pitch: 10, action: 'route',    target: '/graduates',              color: '#D4AF37' },
+      { id: 'mem2',     label: 'Memory Lane',   sublabel: 'Our Journey',              icon: '❤️', yaw:  160, pitch: 10, action: 'route',    target: '/networking',             color: '#ef4444' },
     ],
   },
   {
     id: 'auditorium',
     type: 'image',
-    src: 'https://i.ibb.co/h1KSNWWV/Chat-GPT-Image-Jun-15-2026-07-34-27-AM.png',
+    src: AUDITORIUM_IMAGE_URL,
     title: 'Graduation Ceremony Hall',
     initialYaw: 0,
     initialPitch: 6,
     hotspots: [
-      { id: 'back', label: 'Back to Lobby', sublabel: 'Exit Hall', icon: '🚪', yaw: 178, pitch: 5, action: 'scene', target: 'lobby', color: '#6b7280' },
+      { id: 'back', label: 'Back to Lobby', sublabel: 'Exit Hall', icon: '🚪', yaw: 178, pitch: 5, action: 'scene', target: 'lobby-image', color: '#6b7280' },
     ],
   },
 ]
@@ -129,6 +150,6 @@ export const useVenueStore = create<VenueState>()(
 
       setBbbSize: (w, h) => set({ bbbWidth: w, bbbHeight: h }),
     }),
-    { name: 'venue-store-v2' }
+    { name: 'venue-store-v3' }
   )
 )
