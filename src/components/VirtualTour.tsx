@@ -91,11 +91,21 @@ function use360Viewer(
       },
     )
 
+    const wrap180 = (deg: number) => ((deg % 360) + 540) % 360 - 180
+
     let rafId = 0
     const animate = () => {
       rafId = requestAnimationFrame(animate)
       s.yaw   += (s.targetYaw   - s.yaw)   * 0.12
       s.pitch += (s.targetPitch - s.pitch) * 0.12
+      // Keep yaw/targetYaw bounded so drag deltas and readouts stay consistent
+      // across long sessions instead of accumulating without limit.
+      const wrapped = wrap180(s.yaw)
+      const shift = wrapped - s.yaw
+      if (Math.abs(shift) > 0.001) {
+        s.yaw = wrapped
+        s.targetYaw += shift
+      }
       camera.rotation.y = THREE.MathUtils.degToRad(-s.yaw)
       camera.rotation.x = THREE.MathUtils.degToRad(s.pitch)
       renderer.render(threeScene, camera)
