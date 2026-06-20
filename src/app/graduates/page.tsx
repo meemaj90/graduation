@@ -3,9 +3,11 @@ import { useState, useMemo, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, X, Star, Heart, Camera, Send, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import { useHallStore, HofGraduate, Wish } from '../../store/useHallStore'
+import { useHallStore, HofGraduate } from '../../store/useHallStore'
 
 const YEAR_GROUPS = ['All', 'UKG → Year 1', 'Year 6 → Year 7', 'Year 9 → Year 10'] as const
+
+const WALL_IMAGE_URL = 'https://i.ibb.co/1g2n8qt/Chat-GPT-Image-Jun-20-2026-09-30-20-PM.png'
 
 // Avatar with gold frame
 function Avatar({ name, photoUrl, size = 'md' }: { name: string; photoUrl: string | null; size?: 'sm' | 'md' | 'lg' }) {
@@ -128,9 +130,9 @@ function WishesList({ gradId }: { gradId: string }) {
 }
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
-function GradModal({ grad, onClose }: { grad: HofGraduate; onClose: () => void }) {
+function GradModal({ grad, initialTab = 'about', onClose }: { grad: HofGraduate; initialTab?: 'about' | 'wishes'; onClose: () => void }) {
   const wishes = useHallStore(s => s.wishes[grad.id] ?? [])
-  const [tab, setTab] = useState<'about' | 'wishes'>('about')
+  const [tab, setTab] = useState<'about' | 'wishes'>(initialTab)
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
@@ -221,49 +223,57 @@ function GradModal({ grad, onClose }: { grad: HofGraduate; onClose: () => void }
   )
 }
 
-// ── Portrait medallion ────────────────────────────────────────────────────────
-function Portrait({ grad, onClick, delay }: { grad: HofGraduate; onClick: () => void; delay: number }) {
-  const wishCount = useHallStore(s => (s.wishes[grad.id] ?? []).length)
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-      transition={{ delay }}
-      whileHover={{ scale: 1.08, y: -6 }}
-      onClick={onClick}
-      className="flex flex-col items-center gap-2 cursor-pointer group">
+// ── Well-wish graduate picker ──────────────────────────────────────────────────
+function WishPicker({ graduates, onPick, onClose }: { graduates: HofGraduate[]; onPick: (g: HofGraduate) => void; onClose: () => void }) {
+  const [search, setSearch] = useState('')
+  const filtered = useMemo(() =>
+    graduates.filter(g => !search || g.name.toLowerCase().includes(search.toLowerCase())),
+  [graduates, search])
 
-      {/* Gold ring frame */}
-      <div className="relative">
-        <div className="rounded-full p-[3px]"
-          style={{
-            background: 'linear-gradient(135deg,#FFD700,#D4AF37,#B8960C,#FFD700)',
-            boxShadow: '0 0 20px rgba(212,175,55,0.7), 0 0 40px rgba(212,175,55,0.3)',
-          }}>
-          <div className="rounded-full p-[3px]" style={{ background: '#0a2472' }}>
-            <div className="rounded-full overflow-hidden w-20 h-20 sm:w-24 sm:h-24"
-              style={{ background: 'linear-gradient(135deg,#1a3a8f,#0d2060)' }}>
-              <Avatar name={grad.name} photoUrl={grad.photoUrl} size="md" />
-            </div>
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(16px)' }}
+      onClick={onClose}>
+      <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9 }}
+        onClick={e => e.stopPropagation()}
+        className="w-full max-w-md rounded-3xl overflow-hidden shadow-2xl max-h-[80vh] flex flex-col"
+        style={{ background: 'linear-gradient(160deg,#0a1440,#0f2060)', border: '2px solid rgba(212,175,55,0.6)' }}>
+        <div className="flex items-center justify-between px-6 pt-6 pb-4">
+          <h2 className="text-lg font-black text-white flex items-center gap-2">
+            <Heart className="w-5 h-5" style={{ color: '#E8720C' }} fill="#E8720C" /> Drop a Well Wish
+          </h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center text-white/50 hover:text-white"
+            style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <p className="px-6 text-white/40 text-xs mb-3">Choose a graduate to send your congratulations to.</p>
+        <div className="px-6 mb-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name…"
+              className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm text-white placeholder-white/30 outline-none"
+              style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)' }} />
           </div>
         </div>
-        {/* Gown graduation icon */}
-        <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center text-base shadow-lg"
-          style={{ background: 'linear-gradient(135deg,#D4AF37,#B8960C)', border: '2px solid #0a2472' }}>🎓</div>
-        {wishCount > 0 && (
-          <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
-            style={{ background: '#f97316', border: '2px solid #0a2472', color: 'white' }}>
-            {wishCount}
-          </div>
-        )}
-      </div>
-
-      {/* Name plate */}
-      <div className="px-3 py-1 rounded-md text-center"
-        style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(212,175,55,0.5)', minWidth: 80 }}>
-        <p className="text-white font-black text-xs sm:text-sm uppercase tracking-wide leading-tight">
-          {grad.name.split(' ')[0]}
-        </p>
-      </div>
+        <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-2">
+          {filtered.map(g => (
+            <button key={g.id} onClick={() => onPick(g)}
+              className="w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-colors hover:bg-white/5"
+              style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+              <Avatar name={g.name} photoUrl={g.photoUrl} size="sm" />
+              <div className="min-w-0">
+                <p className="text-white text-sm font-bold">{g.name}</p>
+                <p className="text-white/40 text-xs">{g.level}</p>
+              </div>
+            </button>
+          ))}
+          {filtered.length === 0 && (
+            <p className="text-white/30 text-xs text-center py-6">No graduates found</p>
+          )}
+        </div>
+      </motion.div>
     </motion.div>
   )
 }
@@ -271,30 +281,18 @@ function Portrait({ grad, onClick, delay }: { grad: HofGraduate; onClick: () => 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function GraduatesPage() {
   const graduates = useHallStore(s => s.graduates)
-  const [search, setSearch]     = useState('')
-  const [yearGroup, setYearGroup] = useState<string>('All')
+  const [picking, setPicking] = useState(false)
   const [selected, setSelected] = useState<HofGraduate | null>(null)
+  const [selectedTab, setSelectedTab] = useState<'about' | 'wishes'>('about')
 
-  const filtered = useMemo(() =>
-    graduates.filter(g => {
-      const matchSearch = !search || g.name.toLowerCase().includes(search.toLowerCase())
-      const matchYear   = yearGroup === 'All' || g.level === yearGroup
-      return matchSearch && matchYear
-    }),
-  [graduates, search, yearGroup])
-
-  const byGroup = useMemo(() => {
-    const groups: [string, HofGraduate[]][] = []
-    ;(['UKG → Year 1','Year 6 → Year 7','Year 9 → Year 10'] as const).forEach(yg => {
-      const grads = filtered.filter(g => g.level === yg)
-      if (grads.length) groups.push([yg, grads])
-    })
-    return groups
-  }, [filtered])
+  const pickGraduate = (g: HofGraduate) => {
+    setPicking(false)
+    setSelectedTab('wishes')
+    setSelected(g)
+  }
 
   return (
-    <div className="min-h-screen select-none"
-      style={{ background: 'radial-gradient(ellipse at 50% 0%, #1a3a8f 0%, #0a1440 60%, #050e2e 100%)' }}>
+    <div className="min-h-screen select-none" style={{ background: '#050e2e' }}>
 
       {/* TOP NAV */}
       <div className="sticky top-0 z-30 flex items-center justify-between px-4 py-3"
@@ -315,150 +313,26 @@ export default function GraduatesPage() {
         <span className="text-xs px-2 py-1 rounded-full font-bold" style={{ background: '#D4AF37', color: '#0a1440' }}>CLASS OF 2026</span>
       </div>
 
-      {/* SEARCH + FILTER */}
-      <div className="max-w-3xl mx-auto px-4 pt-6 pb-2 flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name…"
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm text-white placeholder-white/30 outline-none"
-            style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }} />
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          {YEAR_GROUPS.map(yg => (
-            <button key={yg} onClick={() => setYearGroup(yg)}
-              className={`px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${yearGroup === yg ? 'text-white' : 'text-white/40 hover:text-white/70'}`}
-              style={yearGroup === yg ? { background: 'rgba(212,175,55,0.2)', border: '1px solid #D4AF37' } : { border: '1px solid rgba(255,255,255,0.1)' }}>
-              {yg}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* ── THE WALL OF FAME (image only, full width, no crop) ── */}
+      <div className="relative w-full">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={WALL_IMAGE_URL} alt="Wall of Fame" className="w-full h-auto block" />
 
-      {/* ── THE WALL BOARD ── */}
-      <div className="max-w-5xl mx-auto px-4 pb-16 pt-2">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
-          className="relative rounded-3xl overflow-hidden"
-          style={{
-            background: '#0a2472 url(https://i.ibb.co/1g2n8qt/Chat-GPT-Image-Jun-20-2026-09-30-20-PM.png) center / contain no-repeat',
-            border: '3px solid #D4AF37',
-            boxShadow: '0 0 60px rgba(212,175,55,0.25), inset 0 0 80px rgba(0,0,0,0.3)',
-          }}>
-
-          {/* Gold corner ornaments */}
-          {['-top-1 -left-1','-top-1 -right-1','-bottom-1 -left-1','-bottom-1 -right-1'].map((pos, i) => (
-            <div key={i} className={`absolute ${pos} w-8 h-8 rounded-full z-10`}
-              style={{ background: 'radial-gradient(circle,#FFD700,#B8960C)', boxShadow: '0 0 12px #FFD700' }} />
-          ))}
-
-          {/* Side banners */}
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 hidden lg:flex flex-col items-center justify-center w-16 h-48 rounded-r-xl text-center"
-            style={{ background: 'linear-gradient(180deg,#0a2472,#1a3a8f)', border: '1px solid rgba(212,175,55,0.4)' }}>
-            <Star className="w-4 h-4 mb-2" style={{ color: '#D4AF37', fill: '#D4AF37' }} />
-            {['DREAM','BELIEVE','ACHIEVE'].map(w => (
-              <p key={w} className="text-xs font-black leading-tight py-0.5" style={{ color: '#D4AF37', letterSpacing: 1 }}>{w}</p>
-            ))}
-            <Star className="w-4 h-4 mt-2" style={{ color: '#D4AF37', fill: '#D4AF37' }} />
-          </div>
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 hidden lg:flex flex-col items-center justify-center w-16 h-48 rounded-l-xl text-center"
-            style={{ background: 'linear-gradient(180deg,#0a2472,#1a3a8f)', border: '1px solid rgba(212,175,55,0.4)' }}>
-            <Star className="w-4 h-4 mb-2" style={{ color: '#D4AF37', fill: '#D4AF37' }} />
-            {['INSPIRE','LEARN','SUCCEED'].map(w => (
-              <p key={w} className="text-xs font-black leading-tight py-0.5" style={{ color: '#D4AF37', letterSpacing: 1 }}>{w}</p>
-            ))}
-            <Star className="w-4 h-4 mt-2" style={{ color: '#D4AF37', fill: '#D4AF37' }} />
-          </div>
-
-          {/* HEADER */}
-          <div className="pt-8 pb-4 px-20 text-center">
-            {/* Logo row */}
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
-                style={{ background: 'linear-gradient(135deg,#1a3a8f,#2563eb)', border: '2px solid #D4AF37' }}>🎓</div>
-              <div className="text-left">
-                <p className="font-black text-xl leading-none" style={{ color: '#2563eb' }}>Nextora</p>
-                <p className="font-black text-xl leading-none" style={{ color: '#f97316' }}>Academy</p>
-                <p className="text-xs italic" style={{ color: '#D4AF37' }}>The Next Dawn of Education</p>
-              </div>
-            </div>
-
-            {/* Stars */}
-            <div className="flex items-center justify-center gap-3 mb-2">
-              <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg,transparent,#D4AF37)' }} />
-              {[...Array(5)].map((_, i) => <span key={i} style={{ color: '#D4AF37', fontSize: 14 }}>★</span>)}
-              <div className="flex-1 h-px" style={{ background: 'linear-gradient(270deg,transparent,#D4AF37)' }} />
-            </div>
-
-            {/* Title */}
-            <h1 className="font-black uppercase leading-none tracking-widest mb-1"
-              style={{
-                fontSize: 'clamp(28px,6vw,52px)',
-                color: '#D4AF37',
-                textShadow: '0 0 30px rgba(212,175,55,0.8), 0 2px 0 #8B6914',
-                letterSpacing: '0.12em',
-              }}>
-              WALL OF FAME
-            </h1>
-
-            {/* Laurel decoration */}
-            <div className="flex items-center justify-center gap-2 mb-3">
-              <span style={{ color: '#D4AF37', fontSize: 20 }}>🌿</span>
-              <div className="px-4 py-1 rounded-full" style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(212,175,55,0.5)' }}>
-                <p className="text-xs font-black uppercase tracking-widest" style={{ color: '#D4AF37' }}>
-                  Celebrating Our Learners
-                </p>
-              </div>
-              <span style={{ color: '#D4AF37', fontSize: 20 }}>🌿</span>
-            </div>
-            <p className="text-xs font-bold tracking-widest" style={{ color: 'rgba(212,175,55,0.6)' }}>
-              2025 / 2026 ACADEMIC SESSION
-            </p>
-          </div>
-
-          {/* Gold divider */}
-          <div className="mx-6 mb-6 h-px" style={{ background: 'linear-gradient(90deg,transparent,#D4AF37,transparent)' }} />
-
-          {/* YEAR GROUP SECTIONS */}
-          <div className="px-4 sm:px-8 lg:px-20 pb-8 space-y-6">
-            {byGroup.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-white/40">No graduates found</p>
-              </div>
-            )}
-            {byGroup.map(([yg, grads], gi) => (
-              <div key={yg} className="rounded-2xl overflow-hidden"
-                style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(212,175,55,0.4)' }}>
-                {/* Section label */}
-                <div className="py-2 text-center"
-                  style={{ background: 'rgba(0,0,0,0.4)', borderBottom: '1px solid rgba(212,175,55,0.3)' }}>
-                  <p className="text-xs sm:text-sm font-black uppercase tracking-widest" style={{ color: '#D4AF37' }}>
-                    {yg}
-                  </p>
-                </div>
-                {/* Portraits row */}
-                <div className="py-6 px-4 flex flex-wrap items-start justify-center gap-4 sm:gap-6">
-                  {grads.map((grad, i) => (
-                    <Portrait key={grad.id} grad={grad} onClick={() => setSelected(grad)}
-                      delay={gi * 0.1 + i * 0.06} />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Footer */}
-          <div className="mx-6 mb-6 pt-4" style={{ borderTop: '1px solid rgba(212,175,55,0.3)' }}>
-            <p className="text-center text-xs font-semibold" style={{ color: 'rgba(212,175,55,0.5)' }}>
-              🎓 Nextora Academy · Class of 2026 · The Next Dawn of Education 🎓
-            </p>
-          </div>
-        </motion.div>
-
-        <p className="text-center text-white/30 text-xs mt-4">Click any graduate to read their story and leave your wishes</p>
+        {/* Floating well-wish CTA */}
+        <button onClick={() => setPicking(true)}
+          className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-6 py-3.5 rounded-full font-bold text-sm text-white shadow-2xl transition-all hover:scale-105"
+          style={{ background: 'linear-gradient(135deg, #E8720C, #D4AF37)', boxShadow: '0 8px 30px rgba(232,114,12,0.55)' }}>
+          <Heart className="w-4 h-4" fill="currentColor" /> Drop a Well Wish
+        </button>
       </div>
 
       <AnimatePresence>
-        {selected && <GradModal grad={selected} onClose={() => setSelected(null)} />}
+        {picking && (
+          <WishPicker graduates={graduates} onPick={pickGraduate} onClose={() => setPicking(false)} />
+        )}
+        {selected && (
+          <GradModal grad={selected} initialTab={selectedTab} onClose={() => setSelected(null)} />
+        )}
       </AnimatePresence>
     </div>
   )
