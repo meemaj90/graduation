@@ -46,7 +46,7 @@ interface VenueState {
 
 // PASTE YOUR IMGBB URLS HERE (or update via Admin → Venue tab):
 const LOBBY_IMAGE_URL = 'https://i.ibb.co/MxhZ4SFs/Nextora-Lobby-8192x4096.png'
-const AUDITORIUM_IMAGE_URL = 'https://i.ibb.co/gM8zzhhf/Nextora-Auditorium-8192x4096.png'
+const AUDITORIUM_IMAGE_URL = 'https://i.ibb.co/6RWC5FgC/Chat-GPT-Image-Jun-20-2026-11-34-32-PM.png'
 // Temporary welcome-lobby image, used until a finished welcome video is ready.
 const WELCOME_IMAGE_URL = 'https://i.ibb.co/5XDrKg3g/Chat-GPT-Image-Jun-20-2026-10-39-55-PM.png'
 
@@ -156,6 +156,6 @@ export const useVenueStore = create<VenueState>()(
 
       setBbbSize: (w, h) => set({ bbbWidth: w, bbbHeight: h }),
     }),
-    { name: 'venue-store-v32' }
+    { name: 'venue-store-v33' }
   )
 )
