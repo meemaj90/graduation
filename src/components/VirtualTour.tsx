@@ -393,6 +393,14 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
     if (scene === 'lobby' && !hasSeenIntro) markIntroSeen()
   }, [scene, hasSeenIntro, markIntroSeen])
 
+  // Leaving the auditorium ends the live stream session — coming back requires rejoining
+  useEffect(() => {
+    if (scene !== 'auditorium') {
+      setBbbJoined(false)
+      setBbbFullscreen(false)
+    }
+  }, [scene])
+
   const goScene = (id: string) => {
     if (transitioning || id === scene) return
     setTrans(true); setLoading(true)
