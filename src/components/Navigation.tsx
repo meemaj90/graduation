@@ -4,14 +4,15 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { GraduationCap, Menu, X, Home, Users, Camera, Calendar, Network, Tv, Settings } from 'lucide-react'
+import { GraduationCap, Menu, X, Home, DoorOpen, Users, Camera, Calendar, Network, Tv, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const UNI_NAME = process.env.NEXT_PUBLIC_UNIVERSITY_NAME || 'Nextora Academy'
 const YEAR = process.env.NEXT_PUBLIC_CEREMONY_YEAR || '2026'
 
 const navLinks = [
-  { href: '/lobby', label: 'Lobby', icon: Home },
+  { href: '/', label: 'Home', icon: Home },
+  { href: '/lobby', label: 'Lobby', icon: DoorOpen },
   { href: '/auditorium', label: 'Auditorium', icon: Tv },
   { href: '/graduates', label: 'Graduates', icon: Users },
   { href: '/photo-booth', label: 'Photo Booth', icon: Camera },
@@ -42,10 +43,8 @@ export default function Navigation() {
         animate={{ y: 0 }}
         transition={{ duration: 0.5 }}
         className={cn(
-          'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
-          scrolled
-            ? 'bg-navy/95 backdrop-blur-md border-b border-white/10 shadow-2xl'
-            : 'bg-transparent'
+          'fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-navy/95 backdrop-blur-md border-b border-white/10',
+          scrolled ? 'shadow-2xl' : ''
         )}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
