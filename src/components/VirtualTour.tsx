@@ -352,10 +352,11 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
   const [showCalib, setShowCalib] = useState(false)
   const [calibYaw, setCalibYaw]   = useState(0)
   const [calibPitch, setCalibPitch] = useState(0)
+  const [bbbFullscreen, setBbbFullscreen] = useState(false)
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const hsRefs    = useRef<{ [key: string]: HTMLDivElement | null }>({})
-  const bbbRef    = useRef<HTMLDivElement>(null)
+  const bbbRef    = useRef<HTMLButtonElement>(null)
 
   const cur = scenes.find(s => s.id === scene) ?? scenes[0]
   const isVideoLobby = cur.type === 'video'
@@ -508,18 +509,29 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
       ))}
 
       {/* BBB SCREEN — auditorium only. Flat, no border/glow, so it reads as
-          the actual screen baked into the photo rather than an overlay. */}
+          the actual screen baked into the photo rather than an overlay.
+          It's a clickable preview only — BBB's own UI chrome doesn't shrink
+          well, so the real meeting opens fullscreen on click. */}
       {scene === 'auditorium' && (
-        <div ref={bbbRef} className="absolute z-10 pointer-events-auto"
-          style={{ display: 'none', overflow: 'hidden' }}>
+        <button
+          ref={bbbRef}
+          onClick={() => bbbUrl && setBbbFullscreen(true)}
+          className="absolute z-10 group"
+          style={{ display: 'none', overflow: 'hidden', cursor: bbbUrl ? 'pointer' : 'default' }}>
           {bbbUrl ? (
-            <iframe
-              src={bbbUrl}
-              className="w-full h-full"
-              allow="camera; microphone; display-capture; autoplay; fullscreen"
-              allowFullScreen
-              style={{ border: 'none' }}
-            />
+            <>
+              <iframe
+                src={bbbUrl}
+                className="w-full h-full pointer-events-none"
+                tabIndex={-1}
+                style={{ border: 'none' }}
+              />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-colors">
+                <span className="opacity-0 group-hover:opacity-100 transition-opacity px-4 py-2 rounded-xl bg-gold text-navy font-bold text-sm shadow-2xl flex items-center gap-2">
+                  🎥 Join Live Stream
+                </span>
+              </div>
+            </>
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center text-center px-6"
               style={{ background: '#000' }}>
@@ -530,8 +542,36 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
               <p className="text-white/20 text-xs">Set BBB URL in admin panel to go live</p>
             </div>
           )}
-        </div>
+        </button>
       )}
+
+      {/* FULLSCREEN LIVE STREAM MODAL */}
+      <AnimatePresence>
+        {bbbFullscreen && bbbUrl && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6"
+            style={{ background: 'rgba(0,0,0,0.92)' }}>
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full h-full max-w-6xl rounded-2xl overflow-hidden shadow-2xl"
+              style={{ border: '1px solid rgba(232,114,12,0.3)' }}>
+              <iframe
+                src={bbbUrl}
+                className="w-full h-full"
+                allow="camera; microphone; display-capture; autoplay; fullscreen"
+                allowFullScreen
+                style={{ border: 'none' }}
+              />
+              <button
+                onClick={() => setBbbFullscreen(false)}
+                className="absolute top-3 right-3 z-10 px-3 py-1.5 rounded-lg bg-black/70 text-white text-sm font-bold hover:bg-black/90 transition-colors">
+                ✕ Close
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* TOP BAR */}
       <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-4 py-2.5"
