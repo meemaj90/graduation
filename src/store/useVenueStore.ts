@@ -47,22 +47,23 @@ interface VenueState {
 // PASTE YOUR IMGBB URLS HERE (or update via Admin → Venue tab):
 const LOBBY_IMAGE_URL = 'https://i.ibb.co/MxhZ4SFs/Nextora-Lobby-8192x4096.png'
 const AUDITORIUM_IMAGE_URL = 'https://i.ibb.co/gM8zzhhf/Nextora-Auditorium-8192x4096.png'
+// Temporary welcome-lobby image, used until a finished welcome video is ready.
+const WELCOME_IMAGE_URL = 'https://i.ibb.co/5XDrKg3g/Chat-GPT-Image-Jun-20-2026-10-39-55-PM.png'
 
 const defaultScenes: SceneConfig[] = [
   {
     id: 'lobby',
-    type: 'video',
-    src: '/images/lobby-video.mp4',
+    type: 'image',
+    src: WELCOME_IMAGE_URL,
     title: 'Welcome Lobby',
-    initialYaw: 0,
-    initialPitch: 0,
+    initialYaw: -92,
+    initialPitch: -23,
+    initialFov: 115,
     hotspots: [
-      { id: 'aud',   label: 'Auditorium',   sublabel: 'Live Ceremony',        icon: '🎭', yaw: -163, pitch: 22, action: 'scene', target: 'auditorium',   color: '#2563eb' },
-      { id: 'grads', label: 'Hall of Fame', sublabel: 'Wall of Fame',         icon: '🎓', yaw: -110, pitch: 22, action: 'route', target: '/graduates',   color: '#9333ea' },
-      { id: 'photo', label: 'Photo Booth',  sublabel: 'Capture Memories',     icon: '📷', yaw:  -72, pitch: 22, action: 'route', target: '/photo-booth', color: '#ec4899' },
-      { id: 'prog',  label: 'Programme',    sublabel: "Today's Schedule",     icon: '📋', yaw:   73, pitch: 22, action: 'route', target: '/program',     color: '#22c55e' },
-      { id: 'awd',   label: 'Awards Hall',  sublabel: 'Celebrate Excellence', icon: '🏆', yaw:  113, pitch: 22, action: 'route', target: '/graduates',   color: '#E8720C' },
-      { id: 'mem',   label: 'Memory Lane',  sublabel: 'Our Journey',          icon: '❤️', yaw:  164, pitch: 22, action: 'route', target: '/networking',  color: '#ef4444' },
+      { id: 'aud',   label: 'Auditorium',   sublabel: 'Live Ceremony',        icon: '🎭', yaw: -150, pitch: 10, action: 'scene', target: 'auditorium',   color: '#2563eb' },
+      { id: 'grads', label: 'Hall of Fame', sublabel: 'Wall of Fame',         icon: '🎓', yaw:  130, pitch:  1, action: 'route', target: '/graduates',   color: '#9333ea' },
+      { id: 'photo', label: 'Photo Booth',  sublabel: 'Capture Memories',     icon: '📷', yaw:   46, pitch: -2, action: 'route', target: '/photo-booth', color: '#ec4899' },
+      { id: 'prog',  label: 'Programme',    sublabel: "Today's Schedule",     icon: '📋', yaw:  174, pitch: -1, action: 'route', target: '/program',     color: '#22c55e' },
     ],
   },
   {
@@ -155,6 +156,6 @@ export const useVenueStore = create<VenueState>()(
 
       setBbbSize: (w, h) => set({ bbbWidth: w, bbbHeight: h }),
     }),
-    { name: 'venue-store-v25' }
+    { name: 'venue-store-v26' }
   )
 )

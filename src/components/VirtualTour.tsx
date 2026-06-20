@@ -398,10 +398,10 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
     if (isVideoLobby) setLoading(false)
   }, [isVideoLobby])
 
-  // Once the visitor has seen the video intro, never show it again automatically
+  // Once the visitor has reached the welcome lobby once, never auto-land there again
   useEffect(() => {
-    if (isVideoLobby && !hasSeenIntro) markIntroSeen()
-  }, [isVideoLobby, hasSeenIntro, markIntroSeen])
+    if (scene === 'lobby' && !hasSeenIntro) markIntroSeen()
+  }, [scene, hasSeenIntro, markIntroSeen])
 
   const goScene = (id: string) => {
     if (transitioning || id === scene) return
