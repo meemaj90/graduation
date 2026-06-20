@@ -376,19 +376,29 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
       }
     })
     if (bbbRef.current && scene === 'auditorium') {
-      const pos = project(bbbYaw, bbbPitch)
-      if (pos.visible) {
-        const left = pos.x.toFixed(2) + '%', top = pos.y.toFixed(2) + '%'
+      // Project the screen's four corners (in angular space) rather than just
+      // its center, and size the box from the projected corners in screen %.
+      // This makes the box scale with zoom/perspective exactly like the photo
+      // behind it, instead of staying a fixed pixel size that "pops out".
+      const halfYaw = bbbWidth / 2
+      const halfPitch = bbbHeight / 2
+      const tl = project(bbbYaw - halfYaw, bbbPitch + halfPitch)
+      const br = project(bbbYaw + halfYaw, bbbPitch - halfPitch)
+      if (tl.visible && br.visible) {
+        const left = Math.min(tl.x, br.x), top = Math.min(tl.y, br.y)
+        const width = Math.abs(br.x - tl.x), height = Math.abs(br.y - tl.y)
         bbbRef.current.style.display = 'block'
-        if (bbbRef.current.style.left !== left) bbbRef.current.style.left = left
-        if (bbbRef.current.style.top !== top) bbbRef.current.style.top = top
+        bbbRef.current.style.left = left.toFixed(2) + '%'
+        bbbRef.current.style.top = top.toFixed(2) + '%'
+        bbbRef.current.style.width = width.toFixed(2) + '%'
+        bbbRef.current.style.height = height.toFixed(2) + '%'
       } else {
         bbbRef.current.style.display = 'none'
       }
     }
     setCalibYaw(Math.round(stRef.current.yaw))
     setCalibPitch(Math.round(stRef.current.pitch))
-  }, [scene, cur.hotspots, bbbYaw, bbbPitch])
+  }, [scene, cur.hotspots, bbbYaw, bbbPitch, bbbWidth, bbbHeight])
 
   // 360° viewer only active for image scenes
   const { stRef } = use360Viewer(canvasRef, cur, () => setLoading(false), onFrame, !isVideoLobby)
@@ -498,11 +508,7 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
           the actual screen baked into the photo rather than an overlay. */}
       {scene === 'auditorium' && (
         <div ref={bbbRef} className="absolute z-10 pointer-events-auto"
-          style={{
-            display: 'none', transform: 'translate(-50%,-50%)',
-            width: bbbWidth, height: bbbHeight,
-            overflow: 'hidden',
-          }}>
+          style={{ display: 'none', overflow: 'hidden' }}>
           {bbbUrl ? (
             <iframe
               src={bbbUrl}

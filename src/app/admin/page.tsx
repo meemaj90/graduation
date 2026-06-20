@@ -230,7 +230,7 @@ function VenueTab() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-white/40 uppercase tracking-wider">Screen Width (px)</label>
+              <label className="text-xs text-white/40 uppercase tracking-wider">Screen Width (° angular span)</label>
               <div className="flex gap-2 mt-1">
                 <input type="number" value={bbbWI} onChange={e => setBbbWI(e.target.value)}
                   className="flex-1 px-3 py-2 rounded-xl text-sm text-white outline-none"
@@ -243,7 +243,7 @@ function VenueTab() {
               </div>
             </div>
             <div>
-              <label className="text-xs text-white/40 uppercase tracking-wider">Screen Height (px)</label>
+              <label className="text-xs text-white/40 uppercase tracking-wider">Screen Height (° angular span)</label>
               <input type="number" value={bbbHI} onChange={e => setBbbHI(e.target.value)}
                 className="w-full mt-1 px-3 py-2 rounded-xl text-sm text-white outline-none"
                 style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }} />
