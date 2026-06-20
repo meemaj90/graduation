@@ -494,15 +494,14 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
         </div>
       ))}
 
-      {/* BBB SCREEN — auditorium only */}
+      {/* BBB SCREEN — auditorium only. Flat, no border/glow, so it reads as
+          the actual screen baked into the photo rather than an overlay. */}
       {scene === 'auditorium' && (
         <div ref={bbbRef} className="absolute z-10 pointer-events-auto"
           style={{
             display: 'none', transform: 'translate(-50%,-50%)',
             width: bbbWidth, height: bbbHeight,
-            borderRadius: 12, overflow: 'hidden',
-            border: '3px solid rgba(212,175,55,0.8)',
-            boxShadow: '0 0 60px rgba(37,99,235,0.6), 0 0 20px rgba(212,175,55,0.4)',
+            overflow: 'hidden',
           }}>
           {bbbUrl ? (
             <iframe
@@ -514,7 +513,7 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
             />
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center text-center px-6"
-              style={{ background: 'linear-gradient(135deg,#060e30,#0f2060,#060e30)' }}>
+              style={{ background: '#000' }}>
               <div className="text-4xl mb-2">🎓</div>
               <p className="text-white font-bold">NEXTORA ACADEMY</p>
               <p className="font-black text-2xl" style={{ color: '#E8720C' }}>GRADUATION CEREMONY 2026</p>
@@ -522,9 +521,6 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
               <p className="text-white/20 text-xs">Set BBB URL in admin panel to go live</p>
             </div>
           )}
-          {['top-0 left-0','top-0 right-0','bottom-0 left-0','bottom-0 right-0'].map((c,i) => (
-            <div key={i} className={`absolute ${c} w-3 h-3`} style={{ background: '#E8720C', boxShadow: '0 0 8px #E8720C' }} />
-          ))}
         </div>
       )}
 
