@@ -96,8 +96,11 @@ function use360Viewer(
     let rafId = 0
     const animate = () => {
       rafId = requestAnimationFrame(animate)
-      s.yaw   += (s.targetYaw   - s.yaw)   * 0.12
-      s.pitch += (s.targetPitch - s.pitch) * 0.12
+      // Snap to target once close enough so the view (and anything anchored
+      // to it, like the BBB screen) comes to a complete stop instead of
+      // drifting forever on a decaying asymptote.
+      s.yaw   = Math.abs(s.targetYaw   - s.yaw)   < 0.01 ? s.targetYaw   : s.yaw   + (s.targetYaw   - s.yaw)   * 0.12
+      s.pitch = Math.abs(s.targetPitch - s.pitch) < 0.01 ? s.targetPitch : s.pitch + (s.targetPitch - s.pitch) * 0.12
       // Keep yaw/targetYaw bounded so drag deltas and readouts stay consistent
       // across long sessions instead of accumulating without limit.
       const wrapped = wrap180(s.yaw)
@@ -206,9 +209,9 @@ function VideoLobby({
         style={{
           position: 'absolute', inset: 0,
           width: '100%', height: '100%',
-          objectFit: 'cover',   // fills screen without stretching
+          background: '#000',
+          objectFit: 'contain',   // shows the full frame, no cropping/zoom
           objectPosition: 'center',
-          filter: 'contrast(1.08) saturate(1.15) brightness(1.02)',
         }}
       />
 
@@ -362,9 +365,10 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
       if (!el) return
       const pos = project(hs.yaw, hs.pitch)
       if (pos.visible) {
+        const left = pos.x.toFixed(2) + '%', top = pos.y.toFixed(2) + '%'
         el.style.display = 'block'
-        el.style.left = pos.x + '%'
-        el.style.top  = pos.y + '%'
+        if (el.style.left !== left) el.style.left = left
+        if (el.style.top !== top) el.style.top = top
       } else {
         el.style.display = 'none'
       }
@@ -372,9 +376,10 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
     if (bbbRef.current && scene === 'auditorium') {
       const pos = project(bbbYaw, bbbPitch)
       if (pos.visible) {
+        const left = pos.x.toFixed(2) + '%', top = pos.y.toFixed(2) + '%'
         bbbRef.current.style.display = 'block'
-        bbbRef.current.style.left = pos.x + '%'
-        bbbRef.current.style.top  = pos.y + '%'
+        if (bbbRef.current.style.left !== left) bbbRef.current.style.left = left
+        if (bbbRef.current.style.top !== top) bbbRef.current.style.top = top
       } else {
         bbbRef.current.style.display = 'none'
       }
