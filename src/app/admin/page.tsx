@@ -46,16 +46,14 @@ function LoginScreen({ onLogin }: { onLogin: (pw: string) => boolean }) {
 
 // ── Venue / Hotspot Tab ───────────────────────────────────────────────────────
 function VenueTab() {
-  const { scenes, bbbUrl, bbbYaw, bbbPitch, bbbWidth, bbbHeight,
+  const { scenes, bbbUrl, bbbYaw, bbbPitch,
     updateScene, updateHotspot, addHotspot, removeHotspot,
-    setBbbUrl, setBbbPosition, setBbbSize } = useVenueStore()
+    setBbbUrl, setBbbPosition } = useVenueStore()
 
   const [selectedScene, setSelectedScene] = useState<SceneId>('lobby' as SceneId)
   const [bbbInput, setBbbInput] = useState(bbbUrl)
   const [bbbYawI, setBbbYawI] = useState(String(bbbYaw))
   const [bbbPitchI, setBbbPitchI] = useState(String(bbbPitch))
-  const [bbbWI, setBbbWI] = useState(String(bbbWidth))
-  const [bbbHI, setBbbHI] = useState(String(bbbHeight))
   const [saved, setSaved] = useState('')
 
   const sceneConfig = scenes.find(s => s.id === selectedScene)!
@@ -209,7 +207,7 @@ function VenueTab() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-white/40 uppercase tracking-wider">Screen Yaw° (0 = center stage)</label>
+              <label className="text-xs text-white/40 uppercase tracking-wider">Hotspot Yaw° (0 = center stage)</label>
               <div className="flex gap-2 mt-1">
                 <input type="number" value={bbbYawI} onChange={e => setBbbYawI(e.target.value)}
                   className="flex-1 px-3 py-2 rounded-xl text-sm text-white outline-none"
@@ -222,33 +220,15 @@ function VenueTab() {
               </div>
             </div>
             <div>
-              <label className="text-xs text-white/40 uppercase tracking-wider">Screen Pitch°</label>
+              <label className="text-xs text-white/40 uppercase tracking-wider">Hotspot Pitch°</label>
               <input type="number" value={bbbPitchI} onChange={e => setBbbPitchI(e.target.value)}
                 className="w-full mt-1 px-3 py-2 rounded-xl text-sm text-white outline-none"
                 style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }} />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-white/40 uppercase tracking-wider">Screen Width (° angular span)</label>
-              <div className="flex gap-2 mt-1">
-                <input type="number" value={bbbWI} onChange={e => setBbbWI(e.target.value)}
-                  className="flex-1 px-3 py-2 rounded-xl text-sm text-white outline-none"
-                  style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }} />
-                <button onClick={() => saveField('Size', () => setBbbSize(Number(bbbWI), Number(bbbHI)))}
-                  className="px-3 py-2 rounded-xl text-xs font-bold"
-                  style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)', color: '#E8720C' }}>
-                  {saved === 'Size' ? '✓' : 'Set'}
-                </button>
-              </div>
-            </div>
-            <div>
-              <label className="text-xs text-white/40 uppercase tracking-wider">Screen Height (° angular span)</label>
-              <input type="number" value={bbbHI} onChange={e => setBbbHI(e.target.value)}
-                className="w-full mt-1 px-3 py-2 rounded-xl text-sm text-white outline-none"
-                style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }} />
-            </div>
-          </div>
+          <p className="text-xs text-white/30">
+            Live stream is now a tap-to-join hotspot in the auditorium (no embedded screen layer) — set where it floats above.
+          </p>
         </div>
       </div>
     </div>

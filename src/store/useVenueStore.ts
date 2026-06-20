@@ -10,7 +10,7 @@ export interface Hotspot {
   icon: string
   yaw: number
   pitch: number
-  action: 'scene' | 'route' | 'external'
+  action: 'scene' | 'route' | 'external' | 'livestream'
   target: string
   color: string
 }
@@ -31,8 +31,6 @@ interface VenueState {
   bbbUrl: string
   bbbYaw: number
   bbbPitch: number
-  bbbWidth: number
-  bbbHeight: number
   hasSeenIntro: boolean
   markIntroSeen: () => void
   updateScene: (id: SceneId, updates: Partial<Omit<SceneConfig, 'id'>>) => void
@@ -41,7 +39,6 @@ interface VenueState {
   removeHotspot: (sceneId: SceneId, hotspotId: string) => void
   setBbbUrl: (url: string) => void
   setBbbPosition: (yaw: number, pitch: number) => void
-  setBbbSize: (w: number, h: number) => void
 }
 
 // PASTE YOUR IMGBB URLS HERE (or update via Admin → Venue tab):
@@ -91,6 +88,7 @@ const defaultScenes: SceneConfig[] = [
     initialFov: 100,
     hotspots: [
       { id: 'back', label: 'Back to Lobby', sublabel: 'Exit Hall', icon: '🚪', yaw: 89, pitch: 10, action: 'scene', target: 'lobby-image', color: '#6b7280' },
+      { id: 'live', label: 'Live Stream', sublabel: 'Tap to Join', icon: '🎥', yaw: -91, pitch: 19, action: 'livestream', target: '', color: '#dc2626' },
     ],
   },
 ]
@@ -102,8 +100,6 @@ export const useVenueStore = create<VenueState>()(
       bbbUrl: '',
       bbbYaw: -91,
       bbbPitch: 19,
-      bbbWidth: 64,
-      bbbHeight: 31,
       hasSeenIntro: false,
 
       markIntroSeen: () => set({ hasSeenIntro: true }),
@@ -153,9 +149,7 @@ export const useVenueStore = create<VenueState>()(
       setBbbUrl: (url) => set({ bbbUrl: url }),
 
       setBbbPosition: (yaw, pitch) => set({ bbbYaw: yaw, bbbPitch: pitch }),
-
-      setBbbSize: (w, h) => set({ bbbWidth: w, bbbHeight: h }),
     }),
-    { name: 'venue-store-v33' }
+    { name: 'venue-store-v34' }
   )
 )
