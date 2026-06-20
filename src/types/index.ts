@@ -60,26 +60,3 @@ export interface Reaction {
 }
 
 export type CeremonyStatus = 'before' | 'live' | 'ended'
-
-// Avatar system (Virtway / ibentos style)
-export interface AvatarCustomization {
-  skinTone: string
-  hairStyle: string
-  hairColor: string
-  outfit: string
-  outfitColor: string
-  accessory: string
-  capColor: string
-  photoUrl?: string
-  usePhoto: boolean
-}
-
-export interface VirtualAttendee {
-  id: string
-  name?: string
-  role: 'graduate' | 'guest' | 'faculty'
-  avatar: AvatarCustomization
-  position: { x: number; y: number }
-  isSpeaking: boolean
-  isStagePending: boolean
-}

@@ -1,11 +1,15 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import FloatingWishButton from '../components/FloatingWishButton'
+
+const UNI_NAME = process.env.NEXT_PUBLIC_UNIVERSITY_NAME || 'Nextora Academy'
+const YEAR = process.env.NEXT_PUBLIC_CEREMONY_YEAR || '2026'
 
 export const metadata: Metadata = {
-  title: 'Excellence University — Graduation 2026',
-  description: 'Virtual Graduation Ceremony 2026 — Experience the milestone together, wherever you are.',
+  title: `${UNI_NAME} — Graduation ${YEAR}`,
+  description: `Virtual Graduation Ceremony ${YEAR} — Experience the milestone together, wherever you are.`,
   openGraph: {
-    title: 'Excellence University Graduation 2026',
+    title: `${UNI_NAME} Graduation ${YEAR}`,
     description: 'Join us for a premium virtual graduation celebration',
     type: 'website',
   },
@@ -21,6 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="bg-navy text-white antialiased min-h-screen">
         {children}
+        <FloatingWishButton />
       </body>
     </html>
   )

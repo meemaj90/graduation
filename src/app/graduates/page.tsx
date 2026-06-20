@@ -340,7 +340,7 @@ export default function GraduatesPage() {
           initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
           className="relative rounded-3xl overflow-hidden"
           style={{
-            background: 'linear-gradient(160deg,#0a2472 0%,#0d1f5c 60%,#081848 100%)',
+            background: '#0a2472 url(https://i.ibb.co/1g2n8qt/Chat-GPT-Image-Jun-20-2026-09-30-20-PM.png) center / contain no-repeat',
             border: '3px solid #D4AF37',
             boxShadow: '0 0 60px rgba(212,175,55,0.25), inset 0 0 80px rgba(0,0,0,0.3)',
           }}>

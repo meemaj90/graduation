@@ -7,6 +7,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { GraduationCap, Menu, X, Home, Users, Camera, Calendar, Network, Tv, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
+const UNI_NAME = process.env.NEXT_PUBLIC_UNIVERSITY_NAME || 'Nextora Academy'
+const YEAR = process.env.NEXT_PUBLIC_CEREMONY_YEAR || '2026'
+
 const navLinks = [
   { href: '/lobby', label: 'Lobby', icon: Home },
   { href: '/auditorium', label: 'Auditorium', icon: Tv },
@@ -57,10 +60,9 @@ export default function Navigation() {
               </div>
               <div>
                 <span className="font-playfair text-lg font-bold text-white leading-none block">
-                  Excellence
-                  <span className="text-gold">U</span>
+                  {UNI_NAME}
                 </span>
-                <span className="text-xs text-gray-400 tracking-widest uppercase">Class of 2026</span>
+                <span className="text-xs text-gray-400 tracking-widest uppercase">Class of {YEAR}</span>
               </div>
             </Link>
 
@@ -134,7 +136,7 @@ export default function Navigation() {
                   <div className="flex items-center gap-3">
                     <GraduationCap className="w-6 h-6 text-gold" />
                     <span className="font-playfair text-lg font-bold text-white">
-                      Excellence<span className="text-gold">U</span>
+                      {UNI_NAME}
                     </span>
                   </div>
                   <button
@@ -168,7 +170,7 @@ export default function Navigation() {
                 </nav>
 
                 <div className="p-4 border-t border-white/10">
-                  <p className="text-xs text-gray-500 text-center">© 2026 Excellence University</p>
+                  <p className="text-xs text-gray-500 text-center">© {YEAR} {UNI_NAME}</p>
                 </div>
               </div>
             </motion.div>

@@ -1,12 +1,14 @@
 'use client'
 
 import { useGraduationStore } from '@/store/useGraduationStore'
+import Navigation from '@/components/Navigation'
 
 export default function ProgramPage() {
   const { programItems } = useGraduationStore()
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#0a1628 0%,#0d1f4c 50%,#0a1628 100%)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 16px 60px' }}>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#0a1628 0%,#0d1f4c 50%,#0a1628 100%)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '104px 16px 60px' }}>
+      <Navigation />
       {/* Booklet */}
       <div style={{ width: '100%', maxWidth: 720, background: 'linear-gradient(170deg,#fdf8ef 0%,#f5ead5 40%,#fdf3e0 100%)', borderRadius: 8, boxShadow: '0 8px 60px rgba(0,0,0,0.6), 0 0 0 1px #c8a84b55', overflow: 'hidden', fontFamily: 'Georgia, "Times New Roman", serif' }}>
 

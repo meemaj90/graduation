@@ -508,8 +508,7 @@ function ProgrammeTab() {
 
 // ── Ceremony Tab ──────────────────────────────────────────────────────────────
 function CeremonyTab() {
-  const { ceremonyStatus, setCeremonyStatus, attendeeCount, setAttendeeCount,
-    virtualAttendees, nextSpeaker, dismissSpeaker, currentSpeakerId, speakerQueue } = useGraduationStore()
+  const { ceremonyStatus, setCeremonyStatus, attendeeCount, setAttendeeCount } = useGraduationStore()
 
   const statusColors = {
     before: 'bg-blue-500/20 border-blue-500/40 text-blue-400',
@@ -540,40 +539,6 @@ function CeremonyTab() {
           <button onClick={() => setAttendeeCount(attendeeCount + 1)}
             className="w-9 h-9 rounded-xl text-white font-bold text-lg" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}>+</button>
         </div>
-      </div>
-
-      <div className="rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}>
-        <h3 className="text-white font-semibold mb-4 flex items-center gap-2"><Mic className="w-4 h-4" style={{ color: '#D4AF37' }} /> Virtual Stage</h3>
-        {currentSpeakerId ? (
-          <div className="flex items-center justify-between p-4 rounded-xl mb-4" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)' }}>
-            <div>
-              <p className="text-sm font-semibold text-red-400">Currently Speaking</p>
-              <p className="text-white">{virtualAttendees.find(a => a.id === currentSpeakerId)?.name}</p>
-            </div>
-            <button onClick={dismissSpeaker} className="px-4 py-2 rounded-xl text-sm font-bold text-red-400" style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)' }}>End Turn</button>
-          </div>
-        ) : <p className="text-white/40 text-sm mb-4">No one on stage</p>}
-        {speakerQueue.length > 0 && (
-          <>
-            <div className="space-y-2 mb-3">
-              {speakerQueue.map((id, i) => {
-                const a = virtualAttendees.find(x => x.id === id)
-                return a ? (
-                  <div key={id} className="flex items-center gap-3 p-2 rounded-lg" style={{ background: 'rgba(255,255,255,0.03)' }}>
-                    <span className="text-white/30 text-sm">{i+1}.</span>
-                    <span className="text-white text-sm">{a.name}</span>
-                    <span className="text-xs text-white/30">{a.role}</span>
-                  </div>
-                ) : null
-              })}
-            </div>
-            <button onClick={nextSpeaker}
-              className="w-full py-2.5 rounded-xl text-sm font-bold"
-              style={{ background: '#D4AF37', color: '#0a1440' }}>
-              Call Next Speaker →
-            </button>
-          </>
-        )}
       </div>
     </div>
   )
