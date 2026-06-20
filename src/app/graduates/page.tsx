@@ -230,47 +230,91 @@ function WishPicker({ graduates, onPick, onClose }: { graduates: HofGraduate[]; 
     graduates.filter(g => !search || g.name.toLowerCase().includes(search.toLowerCase())),
   [graduates, search])
 
+  const grouped = useMemo(() => {
+    const groups: [string, HofGraduate[]][] = []
+    ;(['UKG → Year 1','Year 6 → Year 7','Year 9 → Year 10'] as const).forEach(yg => {
+      const grads = filtered.filter(g => g.level === yg)
+      if (grads.length) groups.push([yg, grads])
+    })
+    return groups
+  }, [filtered])
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(16px)' }}
       onClick={onClose}>
-      <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9 }}
+      <motion.div initial={{ scale: 0.9, y: 24, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }}
+        transition={{ type: 'spring', damping: 22, stiffness: 260 }}
         onClick={e => e.stopPropagation()}
-        className="w-full max-w-md rounded-3xl overflow-hidden shadow-2xl max-h-[80vh] flex flex-col"
-        style={{ background: 'linear-gradient(160deg,#0a1440,#0f2060)', border: '2px solid rgba(212,175,55,0.6)' }}>
-        <div className="flex items-center justify-between px-6 pt-6 pb-4">
-          <h2 className="text-lg font-black text-white flex items-center gap-2">
-            <Heart className="w-5 h-5" style={{ color: '#E8720C' }} fill="#E8720C" /> Drop a Well Wish
-          </h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center text-white/50 hover:text-white"
-            style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+        className="relative w-full max-w-md rounded-[28px] overflow-hidden shadow-2xl max-h-[85vh] flex flex-col"
+        style={{
+          background: 'linear-gradient(160deg,#0d1f5c 0%,#0a1440 55%,#081030 100%)',
+          border: '1px solid rgba(212,175,55,0.5)',
+          boxShadow: '0 0 0 1px rgba(212,175,55,0.15), 0 25px 80px -10px rgba(0,0,0,0.7), 0 0 60px rgba(232,114,12,0.18)',
+        }}>
+
+        {/* Gold corner glints */}
+        {['-top-1 -left-1','-top-1 -right-1'].map((pos, i) => (
+          <div key={i} className={`absolute ${pos} w-10 h-10 rounded-full pointer-events-none`}
+            style={{ background: 'radial-gradient(circle, rgba(255,215,0,0.5), transparent 70%)' }} />
+        ))}
+
+        {/* Header banner */}
+        <div className="relative px-6 pt-7 pb-5 text-center"
+          style={{ background: 'linear-gradient(160deg, rgba(232,114,12,0.18), rgba(212,175,55,0.06) 60%, transparent)' }}>
+          <button onClick={onClose}
+            className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+            style={{ border: '1px solid rgba(255,255,255,0.12)' }}>
             <X className="w-4 h-4" />
           </button>
+          <div className="flex justify-center mb-2">
+            <div className="w-14 h-14 rounded-full flex items-center justify-center text-2xl"
+              style={{ background: 'linear-gradient(135deg,#E8720C,#D4AF37)', boxShadow: '0 0 30px rgba(232,114,12,0.55)' }}>
+              <Heart className="w-6 h-6 text-white" fill="white" />
+            </div>
+          </div>
+          <h2 className="text-xl font-black text-white tracking-tight">Drop a Well Wish</h2>
+          <p className="text-white/40 text-xs mt-1">Choose a graduate to send your congratulations to</p>
         </div>
-        <p className="px-6 text-white/40 text-xs mb-3">Choose a graduate to send your congratulations to.</p>
-        <div className="px-6 mb-3">
+
+        {/* Search */}
+        <div className="px-6 -mt-1 mb-2 relative z-10">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name…"
-              className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm text-white placeholder-white/30 outline-none"
-              style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)' }} />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name…" autoFocus
+              className="w-full pl-10 pr-4 py-3 rounded-2xl text-sm text-white placeholder-white/30 outline-none transition-all focus:ring-2"
+              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(212,175,55,0.25)', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.3)' }} />
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-2">
-          {filtered.map(g => (
-            <button key={g.id} onClick={() => onPick(g)}
-              className="w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-colors hover:bg-white/5"
-              style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
-              <Avatar name={g.name} photoUrl={g.photoUrl} size="sm" />
-              <div className="min-w-0">
-                <p className="text-white text-sm font-bold">{g.name}</p>
-                <p className="text-white/40 text-xs">{g.level}</p>
+
+        {/* List */}
+        <div className="flex-1 overflow-y-auto px-6 pb-6 pt-2 space-y-4">
+          {grouped.map(([yg, grads]) => (
+            <div key={yg}>
+              <p className="text-[10px] font-black uppercase tracking-widest mb-2 px-1" style={{ color: 'rgba(212,175,55,0.7)' }}>{yg}</p>
+              <div className="space-y-1.5">
+                {grads.map(g => (
+                  <motion.button key={g.id} onClick={() => onPick(g)} whileHover={{ x: 3 }} whileTap={{ scale: 0.98 }}
+                    className="w-full flex items-center gap-3 p-2.5 rounded-2xl text-left transition-colors group"
+                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                    <div className="rounded-full p-0.5 flex-shrink-0" style={{ background: 'linear-gradient(135deg,#FFD700,#D4AF37)' }}>
+                      <div className="rounded-full p-0.5" style={{ background: '#0a1440' }}>
+                        <Avatar name={g.name} photoUrl={g.photoUrl} size="sm" />
+                      </div>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-white text-sm font-bold group-hover:text-orange-200 transition-colors">{g.name}</p>
+                      <p className="text-white/35 text-xs">{g.subject}</p>
+                    </div>
+                    <Heart className="w-4 h-4 text-white/0 group-hover:text-orange-400/70 transition-colors flex-shrink-0" />
+                  </motion.button>
+                ))}
               </div>
-            </button>
+            </div>
           ))}
           {filtered.length === 0 && (
-            <p className="text-white/30 text-xs text-center py-6">No graduates found</p>
+            <p className="text-white/30 text-xs text-center py-10">No graduates found</p>
           )}
         </div>
       </motion.div>

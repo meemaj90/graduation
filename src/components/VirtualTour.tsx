@@ -60,7 +60,7 @@ function use360Viewer(
 
     const W = window.innerWidth, H = window.innerHeight
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true })
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 3))
     renderer.setSize(W, H)
     s.renderer = renderer
 
@@ -78,10 +78,10 @@ function use360Viewer(
       sceneConfig.src,
       (tex) => {
         tex.colorSpace = THREE.SRGBColorSpace
-        tex.minFilter = THREE.LinearMipmapLinearFilter
+        tex.minFilter = THREE.LinearFilter
         tex.magFilter = THREE.LinearFilter
         tex.anisotropy = renderer.capabilities.getMaxAnisotropy()
-        tex.generateMipmaps = true
+        tex.generateMipmaps = false
         threeScene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: tex })))
         onReady()
       },
@@ -572,7 +572,7 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
         {([['lobby','🏛️ Lobby'],['auditorium','🎭 Auditorium']] as [SceneId,string][]).map(([s,label]) => {
           const isActive = scene === s || (s === 'lobby' && scene === 'lobby-image')
           return (
-            <button key={s} onClick={() => goScene(s)}
+            <button key={s} onClick={() => goScene(s === 'lobby' ? 'lobby-image' : s)}
               className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${isActive ? 'text-white' : 'text-white/40 hover:text-white/70'}`}
               style={isActive ? { background: 'rgba(37,99,235,0.55)', border: '1px solid #2563eb' } : {}}>
               {label}

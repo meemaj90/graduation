@@ -5,6 +5,9 @@ import { Camera, Download, RefreshCw, Share2, X } from 'lucide-react'
 import Navigation from '../../components/Navigation'
 import { useGraduationStore } from '../../store/useGraduationStore'
 
+const UNI_NAME = process.env.NEXT_PUBLIC_UNIVERSITY_NAME || 'Nextora Academy'
+const YEAR = process.env.NEXT_PUBLIC_CEREMONY_YEAR || '2026'
+
 const FRAMES = [
   { id: 'classic', label: 'Classic Gold', emoji: '🎓', borderColor: '#D4AF37', bgColor: 'rgba(212,175,55,0.15)', cornerEmoji: '🎓' },
   { id: 'confetti', label: 'Confetti', emoji: '🎉', borderColor: '#7c3aed', bgColor: 'rgba(124,58,237,0.15)', cornerEmoji: '🎊' },
@@ -31,6 +34,7 @@ export default function PhotoBoothPage() {
   const [countdown, setCountdown] = useState<number | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   // photo count tracked locally
 
   const startCamera = async () => {
@@ -39,7 +43,7 @@ export default function PhotoBoothPage() {
       setStream(s)
       if (videoRef.current) videoRef.current.srcObject = s
     } catch {
-      alert('Could not access camera. Please allow camera permissions.')
+      alert('Could not access camera. Please allow camera permissions, or upload a photo instead.')
     }
   }
 
@@ -63,6 +67,38 @@ export default function PhotoBoothPage() {
     }, 1000)
   }
 
+  const drawFrameOverlay = useCallback((ctx: CanvasRenderingContext2D, w: number, h: number) => {
+    const frame = selectedFrame
+    ctx.strokeStyle = frame.borderColor
+    ctx.lineWidth = 12
+    ctx.strokeRect(6, 6, w - 12, h - 12)
+
+    const corners = [[20, 20], [w - 20, 20], [20, h - 20], [w - 20, h - 20]]
+    ctx.font = '32px serif'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    corners.forEach(([x, y]) => ctx.fillText(frame.cornerEmoji, x, y))
+
+    ctx.fillStyle = frame.borderColor
+    ctx.font = 'bold 18px Georgia, serif'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'bottom'
+    ctx.fillText(`${UNI_NAME} · Graduation ${YEAR}`, w / 2, h - 15)
+
+    if (selectedStickers.length > 0) {
+      ctx.font = '36px serif'
+      selectedStickers.forEach((s, i) => {
+        ctx.fillText(s, 60 + i * 50, h - 60)
+      })
+    }
+  }, [selectedFrame, selectedStickers])
+
+  const finishCapture = useCallback((dataUrl: string) => {
+    const photo: CapturedPhoto = { id: Date.now().toString(), dataUrl, frame: selectedFrame.id, timestamp: Date.now() }
+    setCaptured(photo)
+    setGallery((prev) => [photo, ...prev.slice(0, 11)])
+  }, [selectedFrame])
+
   const capturePhoto = useCallback(() => {
     if (!videoRef.current || !canvasRef.current) return
     const ctx = canvasRef.current.getContext('2d')!
@@ -71,43 +107,49 @@ export default function PhotoBoothPage() {
     canvasRef.current.width = w
     canvasRef.current.height = h
 
-    // Draw video
+    // Draw video mirrored, matching the on-screen selfie preview
+    ctx.save()
+    ctx.translate(w, 0)
+    ctx.scale(-1, 1)
     ctx.drawImage(videoRef.current, 0, 0, w, h)
+    ctx.restore()
 
-    // Draw frame overlay
-    const frame = selectedFrame
-    ctx.strokeStyle = frame.borderColor
-    ctx.lineWidth = 12
-    ctx.strokeRect(6, 6, w - 12, h - 12)
-
-    // Corner decorations
-    const corners = [[20, 20], [w - 20, 20], [20, h - 20], [w - 20, h - 20]]
-    ctx.font = '32px serif'
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    corners.forEach(([x, y]) => ctx.fillText(frame.cornerEmoji, x, y))
-
-    // Bottom text
-    ctx.fillStyle = frame.borderColor
-    ctx.font = 'bold 18px Georgia, serif'
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'bottom'
-    ctx.fillText('Excellence University · Graduation 2026', w / 2, h - 15)
-
-    // Stickers
-    if (selectedStickers.length > 0) {
-      ctx.font = '36px serif'
-      selectedStickers.forEach((s, i) => {
-        ctx.fillText(s, 60 + i * 50, h - 60)
-      })
-    }
+    drawFrameOverlay(ctx, w, h)
 
     const dataUrl = canvasRef.current.toDataURL('image/jpeg', 0.92)
-    const photo: CapturedPhoto = { id: Date.now().toString(), dataUrl, frame: frame.id, timestamp: Date.now() }
-    setCaptured(photo)
-    setGallery((prev) => [photo, ...prev.slice(0, 11)])
-    // photo taken
-  }, [selectedFrame, selectedStickers])
+    finishCapture(dataUrl)
+  }, [drawFrameOverlay, finishCapture])
+
+  const handleUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const img = new Image()
+      img.onload = () => {
+        if (!canvasRef.current) return
+        const ctx = canvasRef.current.getContext('2d')!
+        const w = 640
+        const h = 480
+        canvasRef.current.width = w
+        canvasRef.current.height = h
+
+        // Cover-fit the uploaded image into the frame without cropping out the subject
+        const scale = Math.max(w / img.width, h / img.height)
+        const sw = w / scale
+        const sh = h / scale
+        const sx = (img.width - sw) / 2
+        const sy = (img.height - sh) / 2
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, w, h)
+
+        drawFrameOverlay(ctx, w, h)
+        finishCapture(canvasRef.current.toDataURL('image/jpeg', 0.92))
+      }
+      img.src = ev.target?.result as string
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }, [drawFrameOverlay, finishCapture])
 
   const download = (dataUrl: string) => {
     const a = document.createElement('a')
@@ -166,27 +208,36 @@ export default function PhotoBoothPage() {
                   </AnimatePresence>
                   {/* Bottom label overlay */}
                   <div className="absolute bottom-3 left-0 right-0 text-center" style={{ color: selectedFrame.borderColor }}>
-                    <span className="text-sm font-serif font-bold drop-shadow-lg">Excellence University · Graduation 2026</span>
+                    <span className="text-sm font-serif font-bold drop-shadow-lg">{UNI_NAME} · Graduation {YEAR}</span>
                   </div>
                 </>
               ) : (
                 <div className="text-center space-y-4">
                   <div className="text-6xl">📷</div>
                   <p className="text-white/50">Camera not active</p>
-                  <button
-                    onClick={startCamera}
-                    className="px-6 py-3 rounded-xl bg-gold text-navy font-bold hover:bg-gold-light transition-colors"
-                  >
-                    Start Camera
-                  </button>
+                  <div className="flex flex-wrap items-center justify-center gap-3">
+                    <button
+                      onClick={startCamera}
+                      className="px-6 py-3 rounded-xl bg-gold text-navy font-bold hover:bg-gold-light transition-colors"
+                    >
+                      Start Camera
+                    </button>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-6 py-3 rounded-xl glass text-white font-bold hover:bg-white/10 transition-colors"
+                    >
+                      Upload a Photo
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
             <canvas ref={canvasRef} className="hidden" />
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleUpload} className="hidden" />
 
             {/* Camera controls */}
             {stream && (
-              <div className="flex gap-3 justify-center">
+              <div className="flex gap-3 justify-center flex-wrap">
                 <button onClick={stopCamera} className="p-3 glass rounded-xl hover:bg-white/10 transition-colors">
                   <X className="w-5 h-5 text-white/50" />
                 </button>
@@ -200,6 +251,12 @@ export default function PhotoBoothPage() {
                 </button>
                 <button onClick={capturePhoto} className="p-3 glass rounded-xl hover:bg-white/10 transition-colors" title="Instant capture">
                   <RefreshCw className="w-5 h-5 text-white/50" />
+                </button>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-4 py-3 rounded-xl glass text-sm text-white/60 hover:text-white transition-colors"
+                >
+                  Upload Instead
                 </button>
               </div>
             )}
