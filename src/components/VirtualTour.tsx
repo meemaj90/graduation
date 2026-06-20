@@ -356,7 +356,7 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const hsRefs    = useRef<{ [key: string]: HTMLDivElement | null }>({})
-  const bbbRef    = useRef<HTMLButtonElement>(null)
+  const bbbRef    = useRef<HTMLDivElement>(null)
 
   const cur = scenes.find(s => s.id === scene) ?? scenes[0]
   const isVideoLobby = cur.type === 'video'
@@ -376,7 +376,7 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
         el.style.display = 'none'
       }
     })
-    if (bbbRef.current && scene === 'auditorium') {
+    if (bbbRef.current && scene === 'auditorium' && !bbbFullscreen) {
       // Project the center, then derive the local degrees→% scale from a
       // tiny nearby offset (instead of projecting the far corners directly —
       // a wide screen's corners can fall outside the camera's current cone
@@ -402,7 +402,7 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
     }
     setCalibYaw(Math.round(stRef.current.yaw))
     setCalibPitch(Math.round(stRef.current.pitch))
-  }, [scene, cur.hotspots, bbbYaw, bbbPitch, bbbWidth, bbbHeight])
+  }, [scene, cur.hotspots, bbbYaw, bbbPitch, bbbWidth, bbbHeight, bbbFullscreen])
 
   // 360° viewer only active for image scenes
   const { stRef } = use360Viewer(canvasRef, cur, () => setLoading(false), onFrame, !isVideoLobby)
@@ -508,70 +508,62 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
         </div>
       ))}
 
-      {/* BBB SCREEN — auditorium only. Flat, no border/glow, so it reads as
-          the actual screen baked into the photo rather than an overlay.
-          It's a clickable preview only — BBB's own UI chrome doesn't shrink
-          well, so the real meeting opens fullscreen on click. */}
+      {/* BBB SCREEN — auditorium only. One persistent iframe that lives in
+          the wall when collapsed and expands to fill the viewport when
+          tapped, so the meeting connection (and audio) is never dropped or
+          re-joined — closing just shrinks it back to the wall. */}
       {scene === 'auditorium' && (
-        <button
+        <div
           ref={bbbRef}
-          onClick={() => bbbUrl && setBbbFullscreen(true)}
-          className="absolute z-10 group"
-          style={{ display: 'none', overflow: 'hidden', cursor: bbbUrl ? 'pointer' : 'default' }}>
-          {bbbUrl ? (
-            <>
-              <iframe
-                src={bbbUrl}
-                className="w-full h-full pointer-events-none"
-                tabIndex={-1}
-                style={{ border: 'none' }}
-              />
-              <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-colors">
-                <span className="opacity-0 group-hover:opacity-100 transition-opacity px-4 py-2 rounded-xl bg-gold text-navy font-bold text-sm shadow-2xl flex items-center gap-2">
-                  🎥 Join Live Stream
-                </span>
+          onClick={() => !bbbFullscreen && bbbUrl && setBbbFullscreen(true)}
+          className={bbbFullscreen
+            ? 'fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 group'
+            : 'absolute z-10 group'}
+          style={bbbFullscreen
+            ? { background: 'rgba(5,10,25,0.55)', backdropFilter: 'blur(6px)', left: 0, top: 0, right: 0, bottom: 0, width: '100%', height: '100%' }
+            : { display: 'none', overflow: 'hidden', cursor: bbbUrl ? 'pointer' : 'default' }}>
+          <div className={bbbFullscreen
+            ? 'relative w-full h-full max-w-6xl rounded-2xl overflow-hidden shadow-2xl'
+            : 'w-full h-full'}
+            style={bbbFullscreen ? { border: '1px solid rgba(232,114,12,0.3)' } : undefined}>
+            {bbbUrl ? (
+              <>
+                <iframe
+                  src={bbbUrl}
+                  className="w-full h-full"
+                  allow="camera; microphone; display-capture; autoplay; fullscreen"
+                  allowFullScreen
+                  tabIndex={bbbFullscreen ? 0 : -1}
+                  style={{ border: 'none', pointerEvents: bbbFullscreen ? 'auto' : 'none' }}
+                />
+                {!bbbFullscreen && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-colors">
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity px-4 py-2 rounded-xl bg-gold text-navy font-bold text-sm shadow-2xl flex items-center gap-2">
+                      🎥 Tap to Join
+                    </span>
+                  </div>
+                )}
+                {bbbFullscreen && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setBbbFullscreen(false) }}
+                    className="absolute top-3 right-3 z-10 px-3 py-1.5 rounded-lg bg-black/70 text-white text-sm font-bold hover:bg-black/90 transition-colors">
+                    ✕ Close
+                  </button>
+                )}
+              </>
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center text-center px-6"
+                style={{ background: '#000' }}>
+                <div className="text-4xl mb-2">🎓</div>
+                <p className="text-white font-bold">NEXTORA ACADEMY</p>
+                <p className="font-black text-2xl" style={{ color: '#E8720C' }}>GRADUATION CEREMONY 2026</p>
+                <p className="text-white/30 text-xs mt-3">Live stream will appear here</p>
+                <p className="text-white/20 text-xs">Set BBB URL in admin panel to go live</p>
               </div>
-            </>
-          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center text-center px-6"
-              style={{ background: '#000' }}>
-              <div className="text-4xl mb-2">🎓</div>
-              <p className="text-white font-bold">NEXTORA ACADEMY</p>
-              <p className="font-black text-2xl" style={{ color: '#E8720C' }}>GRADUATION CEREMONY 2026</p>
-              <p className="text-white/30 text-xs mt-3">Live stream will appear here</p>
-              <p className="text-white/20 text-xs">Set BBB URL in admin panel to go live</p>
-            </div>
-          )}
-        </button>
+            )}
+          </div>
+        </div>
       )}
-
-      {/* FULLSCREEN LIVE STREAM MODAL */}
-      <AnimatePresence>
-        {bbbFullscreen && bbbUrl && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6"
-            style={{ background: 'rgba(5,10,25,0.55)', backdropFilter: 'blur(6px)' }}>
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full h-full max-w-6xl rounded-2xl overflow-hidden shadow-2xl"
-              style={{ border: '1px solid rgba(232,114,12,0.3)' }}>
-              <iframe
-                src={bbbUrl}
-                className="w-full h-full"
-                allow="camera; microphone; display-capture; autoplay; fullscreen"
-                allowFullScreen
-                style={{ border: 'none' }}
-              />
-              <button
-                onClick={() => setBbbFullscreen(false)}
-                className="absolute top-3 right-3 z-10 px-3 py-1.5 rounded-lg bg-black/70 text-white text-sm font-bold hover:bg-black/90 transition-colors">
-                ✕ Close
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* TOP BAR */}
       <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-4 py-2.5"
