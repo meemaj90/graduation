@@ -43,7 +43,7 @@ interface VenueState {
 }
 
 // PASTE YOUR IMGBB URLS HERE (or update via Admin → Venue tab):
-const LOBBY_IMAGE_URL = 'https://i.ibb.co/wrrjpcw6/Chat-GPT-Image-Jun-20-2026-03-44-18-PM.png'
+const LOBBY_IMAGE_URL = 'https://i.ibb.co/MxhZ4SFs/Nextora-Lobby-8192x4096.png'
 const AUDITORIUM_IMAGE_URL = 'https://i.ibb.co/C5KsWZmx/Chat-GPT-Image-Jun-20-2026-03-36-26-PM.png'
 
 const defaultScenes: SceneConfig[] = [
@@ -153,6 +153,6 @@ export const useVenueStore = create<VenueState>()(
 
       setBbbSize: (w, h) => set({ bbbWidth: w, bbbHeight: h }),
     }),
-    { name: 'venue-store-v17' }
+    { name: 'venue-store-v18' }
   )
 )
