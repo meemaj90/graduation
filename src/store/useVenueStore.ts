@@ -101,9 +101,9 @@ export const useVenueStore = create<VenueState>()(
       scenes: defaultScenes,
       bbbUrl: '',
       bbbYaw: -91,
-      bbbPitch: 21,
-      bbbWidth: 42,
-      bbbHeight: 28,
+      bbbPitch: 19,
+      bbbWidth: 64,
+      bbbHeight: 31,
       hasSeenIntro: false,
 
       markIntroSeen: () => set({ hasSeenIntro: true }),
@@ -156,6 +156,6 @@ export const useVenueStore = create<VenueState>()(
 
       setBbbSize: (w, h) => set({ bbbWidth: w, bbbHeight: h }),
     }),
-    { name: 'venue-store-v31' }
+    { name: 'venue-store-v32' }
   )
 )
