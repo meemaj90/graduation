@@ -376,20 +376,23 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
       }
     })
     if (bbbRef.current && scene === 'auditorium') {
-      // Project the screen's four corners (in angular space) rather than just
-      // its center, and size the box from the projected corners in screen %.
-      // This makes the box scale with zoom/perspective exactly like the photo
-      // behind it, instead of staying a fixed pixel size that "pops out".
-      const halfYaw = bbbWidth / 2
-      const halfPitch = bbbHeight / 2
-      const tl = project(bbbYaw - halfYaw, bbbPitch + halfPitch)
-      const br = project(bbbYaw + halfYaw, bbbPitch - halfPitch)
-      if (tl.visible && br.visible) {
-        const left = Math.min(tl.x, br.x), top = Math.min(tl.y, br.y)
-        const width = Math.abs(br.x - tl.x), height = Math.abs(br.y - tl.y)
+      // Project the center, then derive the local degrees→% scale from a
+      // tiny nearby offset (instead of projecting the far corners directly —
+      // a wide screen's corners can fall outside the camera's current cone
+      // and vanish entirely). This still scales with zoom/perspective like
+      // the photo, but only ever needs the center to be on-screen.
+      const c = project(bbbYaw, bbbPitch)
+      if (c.visible) {
+        const eps = 1
+        const rx = project(bbbYaw + eps, bbbPitch)
+        const ry = project(bbbYaw, bbbPitch + eps)
+        const rateX = (rx.x - c.x) / eps
+        const rateY = (ry.y - c.y) / eps
+        const width = Math.abs(rateX * bbbWidth)
+        const height = Math.abs(rateY * bbbHeight)
         bbbRef.current.style.display = 'block'
-        bbbRef.current.style.left = left.toFixed(2) + '%'
-        bbbRef.current.style.top = top.toFixed(2) + '%'
+        bbbRef.current.style.left = (c.x - width / 2).toFixed(2) + '%'
+        bbbRef.current.style.top = (c.y - height / 2).toFixed(2) + '%'
         bbbRef.current.style.width = width.toFixed(2) + '%'
         bbbRef.current.style.height = height.toFixed(2) + '%'
       } else {
