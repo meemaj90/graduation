@@ -551,7 +551,7 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6"
-            style={{ background: 'rgba(0,0,0,0.92)' }}>
+            style={{ background: 'rgba(5,10,25,0.55)', backdropFilter: 'blur(6px)' }}>
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
               className="relative w-full h-full max-w-6xl rounded-2xl overflow-hidden shadow-2xl"
