@@ -15,9 +15,13 @@ function Avatar({ name, photoUrl, size = 'md' }: { name: string; photoUrl: strin
   const skins = ['#8D5524','#C68642','#4a2c17','#A0522D','#5C4033','#6B3A2A','#3D1C0E']
   const skin = skins[name.charCodeAt(0) % skins.length]
   const sz = size === 'lg' ? 'w-28 h-28 text-3xl' : size === 'md' ? 'w-20 h-20 text-xl' : 'w-12 h-12 text-sm'
+  const capSz = size === 'lg' ? 'text-2xl -top-1 -right-1' : size === 'md' ? 'text-lg -top-0.5 -right-0.5' : 'text-sm -top-0.5 -right-0.5'
   if (photoUrl) return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={photoUrl} alt={name} className={`${sz} rounded-full object-cover`} />
+    <div className="relative inline-block flex-shrink-0">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={photoUrl} alt={name} className={`${sz} rounded-full object-cover`} />
+      <span className={`absolute ${capSz} drop-shadow-md`}>🎓</span>
+    </div>
   )
   return (
     <div className={`${sz} rounded-full flex items-center justify-center font-black text-white`}
