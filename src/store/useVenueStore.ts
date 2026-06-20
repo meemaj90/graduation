@@ -88,7 +88,7 @@ const defaultScenes: SceneConfig[] = [
     initialFov: 100,
     hotspots: [
       { id: 'back', label: 'Back to Lobby', sublabel: 'Exit Hall', icon: '🚪', yaw: 89, pitch: 10, action: 'scene', target: 'lobby-image', color: '#6b7280' },
-      { id: 'live', label: 'Live Stream', sublabel: 'Tap to Join', icon: '🎥', yaw: -91, pitch: 19, action: 'livestream', target: '', color: '#dc2626' },
+      { id: 'live', label: 'Tap to Join Live Stream', sublabel: 'Watch the Ceremony Live', icon: '🎥', yaw: -91, pitch: 19, action: 'livestream', target: '', color: '#dc2626' },
     ],
   },
 ]
@@ -150,6 +150,6 @@ export const useVenueStore = create<VenueState>()(
 
       setBbbPosition: (yaw, pitch) => set({ bbbYaw: yaw, bbbPitch: pitch }),
     }),
-    { name: 'venue-store-v34' }
+    { name: 'venue-store-v35' }
   )
 )
