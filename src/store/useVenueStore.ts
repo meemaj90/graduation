@@ -74,7 +74,7 @@ const defaultScenes: SceneConfig[] = [
     hotspots: [
       { id: 'helpdesk', label: 'Help Desk',     sublabel: 'Chat with us on WhatsApp', icon: '💬', yaw: -92, pitch: -23, action: 'external', target: 'https://wa.me/1234567890', color: '#25D366' },
       { id: 'aud2',     label: 'Auditorium',    sublabel: 'Live Ceremony',            icon: '🎭', yaw: -150, pitch: 10, action: 'scene',    target: 'auditorium',              color: '#2563eb' },
-      { id: 'grads2',   label: 'Hall of Fame',  sublabel: 'Wall of Fame',             icon: '🎓', yaw: -100, pitch: 10, action: 'route',    target: '/graduates',              color: '#9333ea' },
+      { id: 'grads2',   label: 'Hall of Fame',  sublabel: 'Wall of Fame',             icon: '🎓', yaw:  130, pitch:  1, action: 'route',    target: '/graduates',              color: '#9333ea' },
       { id: 'photo2',   label: 'Photo Booth',   sublabel: 'Capture Memories',         icon: '📷', yaw:  -50, pitch: 10, action: 'route',    target: '/photo-booth',            color: '#ec4899' },
       { id: 'prog2',    label: 'Programme',     sublabel: "Today's Schedule",         icon: '📋', yaw:   60, pitch: 10, action: 'route',    target: '/program',                color: '#22c55e' },
       { id: 'awd2',     label: 'Awards Hall',   sublabel: 'Celebrate Excellence',     icon: '🏆', yaw:  110, pitch: 10, action: 'route',    target: '/graduates',              color: '#D4AF37' },
@@ -153,6 +153,6 @@ export const useVenueStore = create<VenueState>()(
 
       setBbbSize: (w, h) => set({ bbbWidth: w, bbbHeight: h }),
     }),
-    { name: 'venue-store-v19' }
+    { name: 'venue-store-v20' }
   )
 )
