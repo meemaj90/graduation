@@ -22,6 +22,7 @@ export interface SceneConfig {
   title: string
   initialYaw: number
   initialPitch: number
+  initialFov?: number
   hotspots: Hotspot[]
 }
 
@@ -69,6 +70,7 @@ const defaultScenes: SceneConfig[] = [
     title: 'Welcome Lobby',
     initialYaw: 0,
     initialPitch: 0,
+    initialFov: 100,
     hotspots: [
       { id: 'helpdesk', label: 'Help Desk',     sublabel: 'Chat with us on WhatsApp', icon: '💬', yaw: 0,    pitch: -8, action: 'external', target: 'https://wa.me/1234567890', color: '#25D366' },
       { id: 'aud2',     label: 'Auditorium',    sublabel: 'Live Ceremony',            icon: '🎭', yaw: -150, pitch: 10, action: 'scene',    target: 'auditorium',              color: '#2563eb' },
@@ -150,6 +152,6 @@ export const useVenueStore = create<VenueState>()(
 
       setBbbSize: (w, h) => set({ bbbWidth: w, bbbHeight: h }),
     }),
-    { name: 'venue-store-v13' }
+    { name: 'venue-store-v14' }
   )
 )

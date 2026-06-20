@@ -28,7 +28,7 @@ function use360Viewer(
     pitch: sceneConfig.initialPitch,
     targetYaw: sceneConfig.initialYaw,
     targetPitch: sceneConfig.initialPitch,
-    fov: 75,
+    fov: sceneConfig.initialFov ?? 75,
   })
 
   const project = useCallback((hotYaw: number, hotPitch: number) => {
@@ -56,6 +56,7 @@ function use360Viewer(
     s.pitch = sceneConfig.initialPitch
     s.targetYaw = sceneConfig.initialYaw
     s.targetPitch = sceneConfig.initialPitch
+    s.fov = sceneConfig.initialFov ?? 75
 
     const W = window.innerWidth, H = window.innerHeight
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true })
