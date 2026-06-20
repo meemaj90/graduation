@@ -51,40 +51,40 @@ export default function ProgramPage() {
           width: '100%', maxWidth: 720, position: 'relative', zIndex: 10,
           background: 'linear-gradient(170deg,#fdf8ef 0%,#f5ead5 40%,#fdf3e0 100%)',
           borderRadius: 16,
-          boxShadow: '0 30px 90px -10px rgba(0,0,0,0.65), 0 0 0 1px #c8a84b55, 0 0 80px rgba(212,175,55,0.12)',
+          boxShadow: '0 30px 90px -10px rgba(0,0,0,0.65), 0 0 0 1px #d9824a55, 0 0 80px rgba(212,175,55,0.12)',
           overflow: 'hidden', fontFamily: 'Georgia, "Times New Roman", serif',
         }}>
 
         {/* Gold top bar */}
-        <div style={{ height: 10, background: 'linear-gradient(90deg,#8b6914,#D4AF37,#FFD700,#D4AF37,#8b6914)' }} />
+        <div style={{ height: 10, background: 'linear-gradient(90deg,#9a3412,#E8720C,#F97316,#E8720C,#9a3412)' }} />
 
         {/* Header section */}
         <div style={{ background: 'linear-gradient(160deg,#0a2472,#0d1f5c,#081848)', padding: '44px 48px 38px', textAlign: 'center', position: 'relative' }}>
           {/* Corner ornaments */}
           {['topleft','topright','botleft','botright'].map((pos) => (
-            <div key={pos} style={{ position: 'absolute', width: 32, height: 32, top: pos.startsWith('top') ? 12 : undefined, bottom: pos.startsWith('bot') ? 12 : undefined, left: pos.endsWith('left') ? 12 : undefined, right: pos.endsWith('right') ? 12 : undefined, borderTop: pos.startsWith('top') ? '2px solid #D4AF37' : 'none', borderBottom: pos.startsWith('bot') ? '2px solid #D4AF37' : 'none', borderLeft: pos.endsWith('left') ? '2px solid #D4AF37' : 'none', borderRight: pos.endsWith('right') ? '2px solid #D4AF37' : 'none' }} />
+            <div key={pos} style={{ position: 'absolute', width: 32, height: 32, top: pos.startsWith('top') ? 12 : undefined, bottom: pos.startsWith('bot') ? 12 : undefined, left: pos.endsWith('left') ? 12 : undefined, right: pos.endsWith('right') ? 12 : undefined, borderTop: pos.startsWith('top') ? '2px solid #E8720C' : 'none', borderBottom: pos.startsWith('bot') ? '2px solid #E8720C' : 'none', borderLeft: pos.endsWith('left') ? '2px solid #E8720C' : 'none', borderRight: pos.endsWith('right') ? '2px solid #E8720C' : 'none' }} />
           ))}
-          <div style={{ fontSize: 11, letterSpacing: 4, color: '#D4AF37', textTransform: 'uppercase', marginBottom: 12, fontFamily: 'Georgia,serif' }}>{UNI_NAME}</div>
-          <div style={{ fontSize: 13, letterSpacing: 2, color: '#D4AF37aa', marginBottom: 8, fontFamily: 'Georgia,serif' }}>Presents</div>
+          <div style={{ fontSize: 11, letterSpacing: 4, color: '#E8720C', textTransform: 'uppercase', marginBottom: 12, fontFamily: 'Georgia,serif' }}>{UNI_NAME}</div>
+          <div style={{ fontSize: 13, letterSpacing: 2, color: '#E8720Caa', marginBottom: 8, fontFamily: 'Georgia,serif' }}>Presents</div>
           <div style={{
             fontSize: 32, fontWeight: 700, letterSpacing: 2, marginBottom: 6,
-            backgroundImage: 'linear-gradient(135deg, #D4AF37 0%, #FFD700 40%, #E8720C 70%, #D4AF37 100%)',
+            backgroundImage: 'linear-gradient(135deg, #E8720C 0%, #F97316 40%, #E8720C 70%, #E8720C 100%)',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
             backgroundSize: '200% auto', animation: 'shimmerGold 5s linear infinite',
             textShadow: '0 2px 16px rgba(212,175,55,0.4)',
           }}>GRADUATION CEREMONY</div>
-          <div style={{ fontSize: 17, color: '#D4AF37cc', letterSpacing: 1, marginBottom: 4 }}>2025 / 2026 Academic Session</div>
+          <div style={{ fontSize: 17, color: '#E8720Ccc', letterSpacing: 1, marginBottom: 4 }}>2025 / 2026 Academic Session</div>
           <div style={{ color: '#ffffff88', fontSize: 13, marginTop: 16, letterSpacing: 1 }}>UKG → Year 1 &nbsp;|&nbsp; Year 6 → Year 7 &nbsp;|&nbsp; Year 9 → Year 10</div>
         </div>
 
         {/* Gold divider */}
-        <div style={{ height: 6, background: 'linear-gradient(90deg,#8b6914,#D4AF37,#FFD700,#D4AF37,#8b6914)' }} />
+        <div style={{ height: 6, background: 'linear-gradient(90deg,#9a3412,#E8720C,#F97316,#E8720C,#9a3412)' }} />
 
         {/* Programme body */}
         <div style={{ padding: '36px 48px 48px' }}>
           <div style={{ textAlign: 'center', marginBottom: 32 }}>
-            <div style={{ fontSize: 9, letterSpacing: 5, textTransform: 'uppercase', color: '#8b6914', marginBottom: 6 }}>Order of Events</div>
-            <div style={{ height: 1, background: 'linear-gradient(90deg,transparent,#D4AF37,transparent)' }} />
+            <div style={{ fontSize: 9, letterSpacing: 5, textTransform: 'uppercase', color: '#9a3412', marginBottom: 6 }}>Order of Events</div>
+            <div style={{ height: 1, background: 'linear-gradient(90deg,transparent,#E8720C,transparent)' }} />
           </div>
 
           {/* Programme items */}
@@ -98,27 +98,27 @@ export default function ProgramPage() {
                   viewport={{ once: true, margin: '-40px' }} transition={{ delay: Math.min(i * 0.06, 0.5) }}
                   style={{
                     display: 'flex', gap: 20, marginBottom: 28, paddingBottom: 28,
-                    borderBottom: i < programItems.length - 1 ? '1px solid #D4AF3730' : 'none',
+                    borderBottom: i < programItems.length - 1 ? '1px solid #E8720C30' : 'none',
                     position: 'relative',
                   }}>
                   {isCurrent && (
-                    <div style={{ position: 'absolute', left: -48, top: 0, bottom: 28, width: 4, borderRadius: 4, background: 'linear-gradient(180deg,#E8720C,#D4AF37)' }} />
+                    <div style={{ position: 'absolute', left: -48, top: 0, bottom: 28, width: 4, borderRadius: 4, background: 'linear-gradient(180deg,#E8720C,#E8720C)' }} />
                   )}
                   {/* Time column */}
                   <div style={{ minWidth: 72, textAlign: 'right', paddingTop: 2 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: isCurrent ? '#E8720C' : '#8b6914', letterSpacing: 0.5 }}>{item.time}</div>
-                    <div style={{ fontSize: 10, color: '#8b691488', marginTop: 2 }}>{item.duration} min</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: isCurrent ? '#E8720C' : '#9a3412', letterSpacing: 0.5 }}>{item.time}</div>
+                    <div style={{ fontSize: 10, color: '#9a341288', marginTop: 2 }}>{item.duration} min</div>
                   </div>
 
                   {/* Dot + line */}
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 6 }}>
                     <div style={{
                       width: isCurrent ? 14 : 10, height: isCurrent ? 14 : 10, borderRadius: '50%',
-                      background: isCurrent ? 'linear-gradient(135deg,#E8720C,#FFD700)' : isPast ? 'linear-gradient(135deg,#8b6914,#a3892a)' : 'linear-gradient(135deg,#D4AF37,#FFD700)',
-                      boxShadow: isCurrent ? '0 0 0 5px rgba(232,114,12,0.25), 0 0 16px rgba(232,114,12,0.6)' : '0 0 0 3px #D4AF3720',
+                      background: isCurrent ? 'linear-gradient(135deg,#E8720C,#F97316)' : isPast ? 'linear-gradient(135deg,#9a3412,#c2620f)' : 'linear-gradient(135deg,#E8720C,#F97316)',
+                      boxShadow: isCurrent ? '0 0 0 5px rgba(232,114,12,0.25), 0 0 16px rgba(232,114,12,0.6)' : '0 0 0 3px #E8720C20',
                       flexShrink: 0, transition: 'all 0.3s',
                     }} />
-                    <div style={{ flex: 1, width: 1, background: 'linear-gradient(#D4AF3740,transparent)', marginTop: 4 }} />
+                    <div style={{ flex: 1, width: 1, background: 'linear-gradient(#E8720C40,transparent)', marginTop: 4 }} />
                   </div>
 
                   {/* Content */}
@@ -130,7 +130,7 @@ export default function ProgramPage() {
                       )}
                     </div>
                     {item.speaker && (
-                      <div style={{ fontSize: 12, color: '#8b6914', fontStyle: 'italic', marginBottom: 6 }}>{item.speaker}</div>
+                      <div style={{ fontSize: 12, color: '#9a3412', fontStyle: 'italic', marginBottom: 6 }}>{item.speaker}</div>
                     )}
                     <div style={{ fontSize: 13, color: '#4a3a1e', lineHeight: 1.7 }}>{item.description}</div>
                   </div>
@@ -140,8 +140,8 @@ export default function ProgramPage() {
           </div>
 
           {/* Footer note */}
-          <div style={{ marginTop: 16, padding: '16px 24px', background: '#D4AF3712', border: '1px solid #D4AF3730', borderRadius: 4, textAlign: 'center' }}>
-            <div style={{ fontSize: 11, color: '#8b6914', fontStyle: 'italic', lineHeight: 1.7 }}>
+          <div style={{ marginTop: 16, padding: '16px 24px', background: '#E8720C12', border: '1px solid #E8720C30', borderRadius: 4, textAlign: 'center' }}>
+            <div style={{ fontSize: 11, color: '#9a3412', fontStyle: 'italic', lineHeight: 1.7 }}>
               Times are approximate and may be subject to adjustment on the day.<br />
               All guests are kindly requested to be seated by 9:15 AM.
             </div>
@@ -149,7 +149,7 @@ export default function ProgramPage() {
         </div>
 
         {/* Gold bottom bar */}
-        <div style={{ height: 10, background: 'linear-gradient(90deg,#8b6914,#D4AF37,#FFD700,#D4AF37,#8b6914)' }} />
+        <div style={{ height: 10, background: 'linear-gradient(90deg,#9a3412,#E8720C,#F97316,#E8720C,#9a3412)' }} />
       </motion.div>
 
       <style jsx global>{`

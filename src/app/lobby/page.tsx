@@ -9,7 +9,7 @@ const VirtualTour = dynamic(() => import('../../components/VirtualTour'), {
       <p className="text-white font-bold text-lg">Nextora Academy</p>
       <p className="text-white/40 text-sm mt-1">Loading lobby…</p>
       <div className="mt-4 w-48 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.1)' }}>
-        <div className="h-full rounded-full animate-pulse" style={{ width: '80%', background: '#D4AF37' }} />
+        <div className="h-full rounded-full animate-pulse" style={{ width: '80%', background: '#E8720C' }} />
       </div>
     </div>
   ),

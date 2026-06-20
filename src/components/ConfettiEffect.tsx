@@ -24,7 +24,7 @@ export default function ConfettiEffect({ trigger = true, onComplete }: ConfettiE
         angle: 60,
         spread: 55,
         origin: { x: 0 },
-        colors: ['#D4AF37', '#F0D060', '#ffffff', '#A88A20', '#FFD700'],
+        colors: ['#E8720C', '#F0D060', '#ffffff', '#A88A20', '#F97316'],
         gravity: 0.9,
         scalar: 1.2,
       })
@@ -33,7 +33,7 @@ export default function ConfettiEffect({ trigger = true, onComplete }: ConfettiE
         angle: 120,
         spread: 55,
         origin: { x: 1 },
-        colors: ['#D4AF37', '#F0D060', '#ffffff', '#A88A20', '#FFD700'],
+        colors: ['#E8720C', '#F0D060', '#ffffff', '#A88A20', '#F97316'],
         gravity: 0.9,
         scalar: 1.2,
       })
@@ -60,7 +60,7 @@ export function triggerConfetti() {
       ...defaults,
       ...opts,
       particleCount: Math.floor(count * particleRatio),
-      colors: ['#D4AF37', '#F0D060', '#ffffff', '#A88A20', '#FFD700'],
+      colors: ['#E8720C', '#F0D060', '#ffffff', '#A88A20', '#F97316'],
     })
   }
 

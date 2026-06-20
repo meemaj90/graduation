@@ -790,7 +790,7 @@ export const sponsors: Sponsor[] = [
     id: 'sponsor-001',
     name: 'Apex Technologies',
     tier: 'gold',
-    logo: 'https://api.dicebear.com/8.x/initials/svg?seed=AT&backgroundColor=D4AF37&textColor=0A0E1A',
+    logo: 'https://api.dicebear.com/8.x/initials/svg?seed=AT&backgroundColor=E8720C&textColor=0A0E1A',
     url: 'https://apextechnologies.example.com',
   },
   {
@@ -804,7 +804,7 @@ export const sponsors: Sponsor[] = [
     id: 'sponsor-003',
     name: 'Horizon Health Systems',
     tier: 'gold',
-    logo: 'https://api.dicebear.com/8.x/initials/svg?seed=HHS&backgroundColor=1a2235&textColor=D4AF37',
+    logo: 'https://api.dicebear.com/8.x/initials/svg?seed=HHS&backgroundColor=1a2235&textColor=E8720C',
     url: 'https://horizonhealth.example.com',
   },
   {

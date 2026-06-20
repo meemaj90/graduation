@@ -309,7 +309,7 @@ function TourGuide({ scene }: { scene: SceneId }) {
       style={{ maxWidth: 280 }}>
       <div className="flex-shrink-0 relative">
         <div className="w-11 h-11 rounded-full flex items-center justify-center text-xl shadow-xl"
-          style={{ background: 'linear-gradient(135deg,#1a3a8f,#2563eb)', border: '2px solid #D4AF37' }}>🤖</div>
+          style={{ background: 'linear-gradient(135deg,#1a3a8f,#2563eb)', border: '2px solid #E8720C' }}>🤖</div>
         <div className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-400 border-2 border-white" />
       </div>
       <motion.div key={idx} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
@@ -341,9 +341,10 @@ const SCHEDULE = [
 export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
   const router = useRouter()
   const { myName, attendeeCount, ceremonyStatus, reactions, addReaction } = useGraduationStore()
-  const { scenes, bbbUrl, bbbYaw, bbbPitch, bbbWidth, bbbHeight } = useVenueStore()
+  const { scenes, bbbUrl, bbbYaw, bbbPitch, bbbWidth, bbbHeight, hasSeenIntro, markIntroSeen } = useVenueStore()
 
-  const [scene, setScene]         = useState<SceneId>(initialScene)
+  const startScene = initialScene === 'lobby' && hasSeenIntro ? 'lobby-image' : initialScene
+  const [scene, setScene]         = useState<SceneId>(startScene)
   const [loading, setLoading]     = useState(true)
   const [transitioning, setTrans] = useState(false)
   const [showPanel, setShowPanel] = useState(false)
@@ -396,6 +397,11 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
   useEffect(() => {
     if (isVideoLobby) setLoading(false)
   }, [isVideoLobby])
+
+  // Once the visitor has seen the video intro, never show it again automatically
+  useEffect(() => {
+    if (isVideoLobby && !hasSeenIntro) markIntroSeen()
+  }, [isVideoLobby, hasSeenIntro, markIntroSeen])
 
   const goScene = (id: string) => {
     if (transitioning || id === scene) return
@@ -452,7 +458,7 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
             <p className="text-white font-bold text-xl">Nextora Academy</p>
             <p className="text-white/40 text-sm mt-1">Loading {cur.title}…</p>
             <div className="mt-4 w-52 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
-              <motion.div className="h-full rounded-full" style={{ background: '#D4AF37' }}
+              <motion.div className="h-full rounded-full" style={{ background: '#E8720C' }}
                 animate={{ width: ['0%', '100%'] }} transition={{ duration: 1.2 }} />
             </div>
           </motion.div>
@@ -511,13 +517,13 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
               style={{ background: 'linear-gradient(135deg,#060e30,#0f2060,#060e30)' }}>
               <div className="text-4xl mb-2">🎓</div>
               <p className="text-white font-bold">NEXTORA ACADEMY</p>
-              <p className="font-black text-2xl" style={{ color: '#D4AF37' }}>GRADUATION CEREMONY 2026</p>
+              <p className="font-black text-2xl" style={{ color: '#E8720C' }}>GRADUATION CEREMONY 2026</p>
               <p className="text-white/30 text-xs mt-3">Live stream will appear here</p>
               <p className="text-white/20 text-xs">Set BBB URL in admin panel to go live</p>
             </div>
           )}
           {['top-0 left-0','top-0 right-0','bottom-0 left-0','bottom-0 right-0'].map((c,i) => (
-            <div key={i} className={`absolute ${c} w-3 h-3`} style={{ background: '#D4AF37', boxShadow: '0 0 8px #D4AF37' }} />
+            <div key={i} className={`absolute ${c} w-3 h-3`} style={{ background: '#E8720C', boxShadow: '0 0 8px #E8720C' }} />
           ))}
         </div>
       )}
@@ -527,10 +533,10 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
         style={{ background: 'rgba(8,16,60,0.88)', backdropFilter: 'blur(14px)', borderBottom: '1px solid rgba(212,175,55,0.18)' }}>
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg,#1a3a8f,#2563eb)', border: '1px solid #D4AF37' }}>🎓</div>
+            style={{ background: 'linear-gradient(135deg,#1a3a8f,#2563eb)', border: '1px solid #E8720C' }}>🎓</div>
           <div>
             <p className="text-white font-bold text-xs leading-none">NEXTORA ACADEMY</p>
-            <p className="text-xs leading-none" style={{ color: '#D4AF37' }}>GRADUATION WORLD 2026</p>
+            <p className="text-xs leading-none" style={{ color: '#E8720C' }}>GRADUATION WORLD 2026</p>
           </div>
           <span className="hidden sm:flex items-center gap-1 text-xs text-white/50">
             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse inline-block" />{attendeeCount} online
@@ -589,14 +595,14 @@ export default function VirtualTour({ initialScene = 'lobby' as SceneId }) {
           <div className="absolute top-1/2 left-1/2 z-40 pointer-events-none"
             style={{ transform: 'translate(-50%,-50%)' }}>
             <div style={{ width: 28, height: 28, position: 'relative' }}>
-              <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 2, background: '#FFD700', transform: 'translateY(-1px)' }} />
-              <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 2, background: '#FFD700', transform: 'translateX(-1px)' }} />
+              <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 2, background: '#F97316', transform: 'translateY(-1px)' }} />
+              <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 2, background: '#F97316', transform: 'translateX(-1px)' }} />
             </div>
           </div>
           <div className="absolute top-24 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-xl text-center"
-            style={{ background: 'rgba(8,16,60,0.95)', border: '1px solid #FFD700' }}>
+            style={{ background: 'rgba(8,16,60,0.95)', border: '1px solid #F97316' }}>
             <p className="text-white text-xs">Drag until the gold crosshair sits at the exact center of the screen, then read these values:</p>
-            <p className="font-bold text-lg" style={{ color: '#FFD700' }}>Yaw: {calibYaw}° &nbsp; Pitch: {calibPitch}°</p>
+            <p className="font-bold text-lg" style={{ color: '#F97316' }}>Yaw: {calibYaw}° &nbsp; Pitch: {calibPitch}°</p>
           </div>
         </>
       )}

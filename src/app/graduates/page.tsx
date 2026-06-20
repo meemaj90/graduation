@@ -97,7 +97,7 @@ function WishForm({ grad, onDone }: { grad: HofGraduate; onDone: () => void }) {
       </div>
       <button onClick={submit} disabled={!name.trim() || !msg.trim()}
         className="w-full py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-bold transition-all disabled:opacity-40"
-        style={{ background: 'linear-gradient(135deg,#D4AF37,#f97316)', color: '#0a1440' }}>
+        style={{ background: 'linear-gradient(135deg,#E8720C,#f97316)', color: '#0a1440' }}>
         <Send className="w-4 h-4" /> Send My Wish to {grad.name.split(' ')[0]}
       </button>
     </div>
@@ -156,19 +156,19 @@ function GradModal({ grad, initialTab = 'about', onClose }: { grad: HofGraduate;
             <X className="w-4 h-4" />
           </button>
           <div className="flex justify-center mb-3">
-            <div className="rounded-full p-1" style={{ background: 'linear-gradient(135deg,#D4AF37,#FFD700)', boxShadow: '0 0 24px rgba(212,175,55,0.6)' }}>
+            <div className="rounded-full p-1" style={{ background: 'linear-gradient(135deg,#E8720C,#F97316)', boxShadow: '0 0 24px rgba(212,175,55,0.6)' }}>
               <div className="rounded-full p-0.5 bg-[#0a1440]">
                 <Avatar name={grad.name} photoUrl={grad.photoUrl} size="lg" />
               </div>
             </div>
           </div>
-          <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: '#D4AF37' }}>⭐ Class of 2026 ⭐</p>
+          <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: '#E8720C' }}>⭐ Class of 2026 ⭐</p>
           <h2 className="text-2xl font-black text-white">{grad.name}</h2>
           <p className="text-sm font-semibold mt-0.5" style={{ color: '#f97316' }}>{grad.level}</p>
           <p className="text-white/40 text-xs">{grad.subject}</p>
           {grad.honors && (
             <div className="mt-2 inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold"
-              style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.4)', color: '#D4AF37' }}>
+              style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.4)', color: '#E8720C' }}>
               <Star className="w-3 h-3" fill="currentColor" /> {grad.honors}
             </div>
           )}
@@ -188,7 +188,7 @@ function GradModal({ grad, initialTab = 'about', onClose }: { grad: HofGraduate;
           {tab === 'about' ? (
             <div className="space-y-3">
               {[
-                { label: 'Future Dream', val: grad.dream, col: '#D4AF37' },
+                { label: 'Future Dream', val: grad.dream, col: '#E8720C' },
                 { label: 'Favourite Memory', val: grad.memory, col: '#60a5fa' },
               ].map(({ label, val, col }) => (
                 <div key={label} className="p-4 rounded-2xl" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
@@ -201,12 +201,12 @@ function GradModal({ grad, initialTab = 'about', onClose }: { grad: HofGraduate;
                 <p className="text-white/70 text-sm italic">"{grad.teacherMsg}"</p>
               </div>
               <div className="p-4 rounded-2xl" style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.25)' }}>
-                <p className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: '#D4AF37' }}>Message from Family</p>
+                <p className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: '#E8720C' }}>Message from Family</p>
                 <p className="text-white/70 text-sm italic">"{grad.parentMsg}"</p>
               </div>
               <button onClick={() => setTab('wishes')}
                 className="w-full py-3 rounded-2xl flex items-center justify-center gap-2 text-sm font-bold"
-                style={{ background: 'linear-gradient(135deg,#D4AF37,#f97316)', color: '#0a1440' }}>
+                style={{ background: 'linear-gradient(135deg,#E8720C,#f97316)', color: '#0a1440' }}>
                 <Heart className="w-4 h-4" fill="currentColor" /> Leave Your Wishes for {grad.name.split(' ')[0]}
               </button>
             </div>
@@ -274,7 +274,7 @@ function WishPicker({ graduates, onPick, onClose }: { graduates: HofGraduate[]; 
           </button>
           <div className="flex justify-center mb-2">
             <div className="w-14 h-14 rounded-full flex items-center justify-center text-2xl"
-              style={{ background: 'linear-gradient(135deg,#E8720C,#D4AF37)', boxShadow: '0 0 30px rgba(232,114,12,0.55)' }}>
+              style={{ background: 'linear-gradient(135deg,#E8720C,#E8720C)', boxShadow: '0 0 30px rgba(232,114,12,0.55)' }}>
               <Heart className="w-6 h-6 text-white" fill="white" />
             </div>
           </div>
@@ -302,7 +302,7 @@ function WishPicker({ graduates, onPick, onClose }: { graduates: HofGraduate[]; 
                   <motion.button key={g.id} onClick={() => onPick(g)} whileHover={{ x: 3 }} whileTap={{ scale: 0.98 }}
                     className="w-full flex items-center gap-3 p-2.5 rounded-2xl text-left transition-colors group"
                     style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                    <div className="rounded-full p-0.5 flex-shrink-0" style={{ background: 'linear-gradient(135deg,#FFD700,#D4AF37)' }}>
+                    <div className="rounded-full p-0.5 flex-shrink-0" style={{ background: 'linear-gradient(135deg,#F97316,#E8720C)' }}>
                       <div className="rounded-full p-0.5" style={{ background: '#0a1440' }}>
                         <Avatar name={g.name} photoUrl={g.photoUrl} size="sm" />
                       </div>
@@ -358,7 +358,7 @@ export default function GraduatesPage() {
             </div>
           </div>
         </div>
-        <span className="text-xs px-2 py-1 rounded-full font-bold" style={{ background: '#D4AF37', color: '#0a1440' }}>CLASS OF 2026</span>
+        <span className="text-xs px-2 py-1 rounded-full font-bold" style={{ background: '#E8720C', color: '#0a1440' }}>CLASS OF 2026</span>
       </div>
 
       {/* ── THE WALL OF FAME (image only, full width, no crop) ── */}
@@ -369,7 +369,7 @@ export default function GraduatesPage() {
         {/* Floating well-wish CTA */}
         <button onClick={() => setPicking(true)}
           className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 px-6 py-3.5 rounded-full font-bold text-sm text-white shadow-2xl transition-all hover:scale-105"
-          style={{ background: 'linear-gradient(135deg, #E8720C, #D4AF37)', boxShadow: '0 8px 30px rgba(232,114,12,0.55)' }}>
+          style={{ background: 'linear-gradient(135deg, #E8720C, #E8720C)', boxShadow: '0 8px 30px rgba(232,114,12,0.55)' }}>
           <Heart className="w-4 h-4" fill="currentColor" /> Drop a Well Wish
         </button>
       </div>

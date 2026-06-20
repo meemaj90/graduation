@@ -33,6 +33,8 @@ interface VenueState {
   bbbPitch: number
   bbbWidth: number
   bbbHeight: number
+  hasSeenIntro: boolean
+  markIntroSeen: () => void
   updateScene: (id: SceneId, updates: Partial<Omit<SceneConfig, 'id'>>) => void
   updateHotspot: (sceneId: SceneId, hotspotId: string, updates: Partial<Hotspot>) => void
   addHotspot: (sceneId: SceneId, hotspot: Hotspot) => void
@@ -59,7 +61,7 @@ const defaultScenes: SceneConfig[] = [
       { id: 'grads', label: 'Hall of Fame', sublabel: 'Wall of Fame',         icon: '🎓', yaw: -110, pitch: 22, action: 'route', target: '/graduates',   color: '#9333ea' },
       { id: 'photo', label: 'Photo Booth',  sublabel: 'Capture Memories',     icon: '📷', yaw:  -72, pitch: 22, action: 'route', target: '/photo-booth', color: '#ec4899' },
       { id: 'prog',  label: 'Programme',    sublabel: "Today's Schedule",     icon: '📋', yaw:   73, pitch: 22, action: 'route', target: '/program',     color: '#22c55e' },
-      { id: 'awd',   label: 'Awards Hall',  sublabel: 'Celebrate Excellence', icon: '🏆', yaw:  113, pitch: 22, action: 'route', target: '/graduates',   color: '#D4AF37' },
+      { id: 'awd',   label: 'Awards Hall',  sublabel: 'Celebrate Excellence', icon: '🏆', yaw:  113, pitch: 22, action: 'route', target: '/graduates',   color: '#E8720C' },
       { id: 'mem',   label: 'Memory Lane',  sublabel: 'Our Journey',          icon: '❤️', yaw:  164, pitch: 22, action: 'route', target: '/networking',  color: '#ef4444' },
     ],
   },
@@ -76,8 +78,8 @@ const defaultScenes: SceneConfig[] = [
       { id: 'aud2',     label: 'Auditorium',    sublabel: 'Live Ceremony',            icon: '🎭', yaw: -150, pitch: 10, action: 'scene',    target: 'auditorium',              color: '#2563eb' },
       { id: 'grads2',   label: 'Hall of Fame',  sublabel: 'Wall of Fame',             icon: '🎓', yaw:  130, pitch:  1, action: 'route',    target: '/graduates',              color: '#9333ea' },
       { id: 'photo2',   label: 'Photo Booth',   sublabel: 'Capture Memories',         icon: '📷', yaw:   46, pitch: -2, action: 'route',    target: '/photo-booth',            color: '#ec4899' },
-      { id: 'prog2',    label: 'Programme',     sublabel: "Today's Schedule",         icon: '📋', yaw:   60, pitch: 10, action: 'route',    target: '/program',                color: '#22c55e' },
-      { id: 'awd2',     label: 'Awards Hall',   sublabel: 'Celebrate Excellence',     icon: '🏆', yaw:  110, pitch: 10, action: 'route',    target: '/graduates',              color: '#D4AF37' },
+      { id: 'prog2',    label: 'Programme',     sublabel: "Today's Schedule",         icon: '📋', yaw:  174, pitch: -1, action: 'route',    target: '/program',                color: '#22c55e' },
+      { id: 'awd2',     label: 'Awards Hall',   sublabel: 'Celebrate Excellence',     icon: '🏆', yaw:  110, pitch: 10, action: 'route',    target: '/graduates',              color: '#E8720C' },
       { id: 'mem2',     label: 'Memory Lane',   sublabel: 'Our Journey',              icon: '❤️', yaw:  160, pitch: 10, action: 'route',    target: '/networking',             color: '#ef4444' },
     ],
   },
@@ -104,6 +106,9 @@ export const useVenueStore = create<VenueState>()(
       bbbPitch: 21,
       bbbWidth: 524,
       bbbHeight: 265,
+      hasSeenIntro: false,
+
+      markIntroSeen: () => set({ hasSeenIntro: true }),
 
       updateScene: (id, updates) =>
         set((state) => ({
@@ -153,6 +158,6 @@ export const useVenueStore = create<VenueState>()(
 
       setBbbSize: (w, h) => set({ bbbWidth: w, bbbHeight: h }),
     }),
-    { name: 'venue-store-v21' }
+    { name: 'venue-store-v23' }
   )
 )

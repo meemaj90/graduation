@@ -21,7 +21,7 @@ function LoginScreen({ onLogin }: { onLogin: (pw: string) => boolean }) {
         <div className="text-center mb-6">
           <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
             style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.3)' }}>
-            <Lock className="w-7 h-7" style={{ color: '#D4AF37' }} />
+            <Lock className="w-7 h-7" style={{ color: '#E8720C' }} />
           </div>
           <h2 className="text-xl font-bold text-white">Admin Panel</h2>
           <p className="text-white/40 text-sm mt-1">Nextora Academy · Graduation 2026</p>
@@ -35,7 +35,7 @@ function LoginScreen({ onLogin }: { onLogin: (pw: string) => boolean }) {
         {err && <p className="text-red-400 text-sm mb-3">{err}</p>}
         <button onClick={submit}
           className="w-full py-3 rounded-xl font-bold text-sm"
-          style={{ background: '#D4AF37', color: '#0a1440' }}>
+          style={{ background: '#E8720C', color: '#0a1440' }}>
           Sign In
         </button>
         <p className="text-center text-xs text-white/20 mt-4">Default password: admin123</p>
@@ -68,7 +68,7 @@ function VenueTab() {
     const id = `hs-${Date.now()}`
     addHotspot(selectedScene, {
       id, label: 'New Hotspot', sublabel: '', icon: '📍',
-      yaw: 0, pitch: 0, action: 'route', target: '/', color: '#D4AF37',
+      yaw: 0, pitch: 0, action: 'route', target: '/', color: '#E8720C',
     })
   }
 
@@ -76,12 +76,12 @@ function VenueTab() {
     <div className="space-y-5">
       {/* Scene selector */}
       <div className="rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}>
-        <h3 className="text-white font-semibold mb-3 flex items-center gap-2"><Map className="w-4 h-4" style={{ color: '#D4AF37' }} /> Scenes</h3>
+        <h3 className="text-white font-semibold mb-3 flex items-center gap-2"><Map className="w-4 h-4" style={{ color: '#E8720C' }} /> Scenes</h3>
         <div className="flex gap-2 mb-4">
           {(['lobby','lobby-image','auditorium'] as SceneId[]).map(s => (
             <button key={s} onClick={() => setSelectedScene(s)}
               className={`px-4 py-2 rounded-xl text-xs font-bold capitalize transition-all ${selectedScene === s ? 'text-white' : 'text-white/40 hover:text-white/70'}`}
-              style={selectedScene === s ? { background: 'rgba(212,175,55,0.2)', border: '1px solid #D4AF37' } : { border: '1px solid rgba(255,255,255,0.1)' }}>
+              style={selectedScene === s ? { background: 'rgba(212,175,55,0.2)', border: '1px solid #E8720C' } : { border: '1px solid rgba(255,255,255,0.1)' }}>
               {s === 'lobby' ? '🏛️ Video Lobby' : s === 'lobby-image' ? '🏛️ Image Lobby' : '🎭 Auditorium'}
             </button>
           ))}
@@ -95,7 +95,7 @@ function VenueTab() {
             className="flex-1 px-3 py-2 rounded-xl text-sm text-white outline-none"
             style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }} />
           <span className="px-2 py-1 text-xs rounded-lg self-center"
-            style={{ background: 'rgba(212,175,55,0.1)', color: '#D4AF37' }}>
+            style={{ background: 'rgba(212,175,55,0.1)', color: '#E8720C' }}>
             {saved === 'Panorama URL' ? '✓ Saved' : 'blur to save'}
           </span>
         </div>
@@ -125,7 +125,7 @@ function VenueTab() {
           <h3 className="text-white font-semibold">📍 Hotspots — {sceneConfig.title}</h3>
           <button onClick={newHotspot}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold"
-            style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)', color: '#D4AF37' }}>
+            style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)', color: '#E8720C' }}>
             <Plus className="w-3.5 h-3.5" /> Add
           </button>
         </div>
@@ -143,7 +143,7 @@ function VenueTab() {
                 <input defaultValue={hs.icon}
                   onBlur={e => updateHotspot(selectedScene, hs.id, { icon: e.target.value })}
                   className="w-12 px-2 py-1 rounded-lg text-center text-sm outline-none"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#D4AF37' }} />
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#E8720C' }} />
                 <button onClick={() => removeHotspot(selectedScene, hs.id)}
                   className="p-1.5 rounded-lg hover:bg-red-500/10 text-red-500/40 hover:text-red-400 transition-colors">
                   <Trash2 className="w-3.5 h-3.5" />
@@ -190,7 +190,7 @@ function VenueTab() {
       {/* BBB Screen Config */}
       <div className="rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(212,175,55,0.2)' }}>
         <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
-          <Radio className="w-4 h-4" style={{ color: '#D4AF37' }} /> Live Stream Screen (Auditorium)
+          <Radio className="w-4 h-4" style={{ color: '#E8720C' }} /> Live Stream Screen (Auditorium)
         </h3>
         <div className="space-y-3">
           <div>
@@ -202,7 +202,7 @@ function VenueTab() {
                 style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }} />
               <button onClick={() => saveField('BBB', () => setBbbUrl(bbbInput))}
                 className="px-4 py-2 rounded-xl text-sm font-bold"
-                style={{ background: saved === 'BBB' ? '#22c55e' : '#D4AF37', color: '#0a1440' }}>
+                style={{ background: saved === 'BBB' ? '#22c55e' : '#E8720C', color: '#0a1440' }}>
                 {saved === 'BBB' ? '✓' : 'Save'}
               </button>
             </div>
@@ -216,7 +216,7 @@ function VenueTab() {
                   style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }} />
                 <button onClick={() => saveField('Pos', () => setBbbPosition(Number(bbbYawI), Number(bbbPitchI)))}
                   className="px-3 py-2 rounded-xl text-xs font-bold"
-                  style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)', color: '#D4AF37' }}>
+                  style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)', color: '#E8720C' }}>
                   {saved === 'Pos' ? '✓' : 'Set'}
                 </button>
               </div>
@@ -237,7 +237,7 @@ function VenueTab() {
                   style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }} />
                 <button onClick={() => saveField('Size', () => setBbbSize(Number(bbbWI), Number(bbbHI)))}
                   className="px-3 py-2 rounded-xl text-xs font-bold"
-                  style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)', color: '#D4AF37' }}>
+                  style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.3)', color: '#E8720C' }}>
                   {saved === 'Size' ? '✓' : 'Set'}
                 </button>
               </div>
@@ -303,7 +303,7 @@ function HallTab() {
         <p className="text-white/50 text-sm">{graduates.length} graduates · click to edit</p>
         <button onClick={() => setAdding(true)}
           className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold"
-          style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.4)', color: '#D4AF37' }}>
+          style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.4)', color: '#E8720C' }}>
           <Plus className="w-4 h-4" /> Add Graduate
         </button>
       </div>
@@ -332,7 +332,7 @@ function HallTab() {
           <Field label="Teacher Message" val={newData.teacherMsg ?? ''} onChange={v => setNewData(d => ({ ...d, teacherMsg: v }))} />
           <Field label="Parent Message" val={newData.parentMsg ?? ''} onChange={v => setNewData(d => ({ ...d, parentMsg: v }))} />
           <div className="flex gap-2">
-            <button onClick={saveNew} className="px-5 py-2 rounded-xl text-sm font-bold" style={{ background: '#D4AF37', color: '#0a1440' }}>Save</button>
+            <button onClick={saveNew} className="px-5 py-2 rounded-xl text-sm font-bold" style={{ background: '#E8720C', color: '#0a1440' }}>Save</button>
             <button onClick={() => { setAdding(false); setNewData({}) }} className="px-5 py-2 rounded-xl text-sm font-bold text-white/50" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>Cancel</button>
           </div>
         </div>
@@ -362,7 +362,7 @@ function HallTab() {
               <Field label="Teacher Message" val={editData.teacherMsg ?? ''} onChange={v => setEditData(d => ({ ...d, teacherMsg: v }))} />
               <Field label="Parent Message" val={editData.parentMsg ?? ''} onChange={v => setEditData(d => ({ ...d, parentMsg: v }))} />
               <div className="flex gap-2">
-                <button onClick={saveEdit} className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-sm font-bold" style={{ background: '#D4AF37', color: '#0a1440' }}><Save className="w-3.5 h-3.5" /> Save</button>
+                <button onClick={saveEdit} className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-sm font-bold" style={{ background: '#E8720C', color: '#0a1440' }}><Save className="w-3.5 h-3.5" /> Save</button>
                 <button onClick={() => setEditing(null)} className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-sm font-bold text-white/50" style={{ border: '1px solid rgba(255,255,255,0.1)' }}><X className="w-3.5 h-3.5" /> Cancel</button>
               </div>
             </div>
@@ -442,7 +442,7 @@ function ProgrammeTab() {
         <p className="text-white/50 text-sm">{programItems.length} programme items</p>
         <button onClick={() => setAdding(true)}
           className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold"
-          style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.4)', color: '#D4AF37' }}>
+          style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.4)', color: '#E8720C' }}>
           <Plus className="w-4 h-4" /> Add Item
         </button>
       </div>
@@ -458,7 +458,7 @@ function ProgrammeTab() {
           <Field label="Title *" val={newData.title ?? ''} onChange={v => setNewData(d => ({ ...d, title: v }))} />
           <TextArea label="Description" val={newData.description ?? ''} onChange={v => setNewData(d => ({ ...d, description: v }))} />
           <div className="flex gap-2">
-            <button onClick={saveNew} className="px-5 py-2 rounded-xl text-sm font-bold" style={{ background: '#D4AF37', color: '#0a1440' }}>Save</button>
+            <button onClick={saveNew} className="px-5 py-2 rounded-xl text-sm font-bold" style={{ background: '#E8720C', color: '#0a1440' }}>Save</button>
             <button onClick={() => { setAdding(false); setNewData({}) }} className="px-5 py-2 rounded-xl text-sm font-bold text-white/50" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>Cancel</button>
           </div>
         </div>
@@ -477,7 +477,7 @@ function ProgrammeTab() {
               <Field label="Title" val={editData.title ?? ''} onChange={v => setEditData(d => ({ ...d, title: v }))} />
               <TextArea label="Description" val={editData.description ?? ''} onChange={v => setEditData(d => ({ ...d, description: v }))} />
               <div className="flex gap-2">
-                <button onClick={saveEdit} className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-sm font-bold" style={{ background: '#D4AF37', color: '#0a1440' }}><Save className="w-3.5 h-3.5" /> Save</button>
+                <button onClick={saveEdit} className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-sm font-bold" style={{ background: '#E8720C', color: '#0a1440' }}><Save className="w-3.5 h-3.5" /> Save</button>
                 <button onClick={() => setEditing(null)} className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-sm font-bold text-white/50" style={{ border: '1px solid rgba(255,255,255,0.1)' }}><X className="w-3.5 h-3.5" /> Cancel</button>
               </div>
             </div>
@@ -486,7 +486,7 @@ function ProgrammeTab() {
               <div className="flex items-center justify-center w-14 h-14 rounded-xl flex-shrink-0 text-center"
                 style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}>
                 <div>
-                  <div className="text-xs font-bold" style={{ color: '#D4AF37' }}>{item.time.split(' ')[0]}</div>
+                  <div className="text-xs font-bold" style={{ color: '#E8720C' }}>{item.time.split(' ')[0]}</div>
                   <div className="text-[10px] text-white/30">{item.time.split(' ')[1]}</div>
                 </div>
               </div>
@@ -519,7 +519,7 @@ function CeremonyTab() {
   return (
     <div className="space-y-5">
       <div className="rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}>
-        <h3 className="text-white font-semibold mb-4 flex items-center gap-2"><Radio className="w-4 h-4" style={{ color: '#D4AF37' }} /> Ceremony Status</h3>
+        <h3 className="text-white font-semibold mb-4 flex items-center gap-2"><Radio className="w-4 h-4" style={{ color: '#E8720C' }} /> Ceremony Status</h3>
         <div className="flex gap-3">
           {(['before','live','ended'] as const).map(s => (
             <button key={s} onClick={() => setCeremonyStatus(s)}
@@ -531,7 +531,7 @@ function CeremonyTab() {
       </div>
 
       <div className="rounded-2xl p-5" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)' }}>
-        <h3 className="text-white font-semibold mb-4 flex items-center gap-2"><Users className="w-4 h-4" style={{ color: '#D4AF37' }} /> Attendee Count</h3>
+        <h3 className="text-white font-semibold mb-4 flex items-center gap-2"><Users className="w-4 h-4" style={{ color: '#E8720C' }} /> Attendee Count</h3>
         <div className="flex items-center gap-4">
           <button onClick={() => setAttendeeCount(Math.max(0, attendeeCount - 1))}
             className="w-9 h-9 rounded-xl text-white font-bold text-lg" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}>−</button>
@@ -566,10 +566,10 @@ export default function AdminPage() {
       <div className="sticky top-0 z-20 flex items-center justify-between px-4 py-3"
         style={{ background: 'rgba(8,16,60,0.95)', backdropFilter: 'blur(14px)', borderBottom: '1px solid rgba(212,175,55,0.2)' }}>
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#1a3a8f,#2563eb)', border: '1px solid #D4AF37' }}>🎓</div>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#1a3a8f,#2563eb)', border: '1px solid #E8720C' }}>🎓</div>
           <div>
             <p className="text-white font-bold text-xs">NEXTORA ACADEMY</p>
-            <p className="text-xs" style={{ color: '#D4AF37' }}>Admin Panel</p>
+            <p className="text-xs" style={{ color: '#E8720C' }}>Admin Panel</p>
           </div>
         </div>
         <button onClick={logoutAdmin}
@@ -585,7 +585,7 @@ export default function AdminPage() {
           {TABS.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${tab === t.id ? 'text-white' : 'text-white/40 hover:text-white/70'}`}
-              style={tab === t.id ? { background: 'rgba(212,175,55,0.2)', border: '1px solid #D4AF37' } : { border: '1px solid rgba(255,255,255,0.1)' }}>
+              style={tab === t.id ? { background: 'rgba(212,175,55,0.2)', border: '1px solid #E8720C' } : { border: '1px solid rgba(255,255,255,0.1)' }}>
               <span>{t.icon}</span> {t.label}
             </button>
           ))}

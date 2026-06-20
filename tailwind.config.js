@@ -9,9 +9,9 @@ module.exports = {
     extend: {
       colors: {
         gold: {
-          DEFAULT: '#D4AF37',
-          light: '#F0D060',
-          dark: '#A08020',
+          DEFAULT: '#E8720C',
+          light: '#F97316',
+          dark: '#B85A0A',
         },
         navy: {
           DEFAULT: '#0a0e1a',
@@ -39,8 +39,8 @@ module.exports = {
           '50%': { transform: 'translateY(-20px)' },
         },
         pulseGold: {
-          '0%, 100%': { boxShadow: '0 0 0 0 rgba(212,175,55,0.4)' },
-          '50%': { boxShadow: '0 0 0 20px rgba(212,175,55,0)' },
+          '0%, 100%': { boxShadow: '0 0 0 0 rgba(232,114,12,0.4)' },
+          '50%': { boxShadow: '0 0 0 20px rgba(232,114,12,0)' },
         },
         confettiFall: {
           '0%': { transform: 'translateY(-100vh) rotate(0deg)', opacity: '1' },
@@ -55,8 +55,8 @@ module.exports = {
           '100%': { opacity: '1' },
         },
         glow: {
-          '0%': { textShadow: '0 0 10px rgba(212,175,55,0.5)' },
-          '100%': { textShadow: '0 0 20px rgba(212,175,55,1), 0 0 30px rgba(212,175,55,0.5)' },
+          '0%': { textShadow: '0 0 10px rgba(232,114,12,0.5)' },
+          '100%': { textShadow: '0 0 20px rgba(232,114,12,1), 0 0 30px rgba(232,114,12,0.5)' },
         },
       },
       backdropBlur: {

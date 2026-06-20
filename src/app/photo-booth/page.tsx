@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Camera, Download, RefreshCw, Share2, X } from 'lucide-react'
 import Navigation from '../../components/Navigation'
@@ -9,7 +9,7 @@ const UNI_NAME = process.env.NEXT_PUBLIC_UNIVERSITY_NAME || 'Nextora Academy'
 const YEAR = process.env.NEXT_PUBLIC_CEREMONY_YEAR || '2026'
 
 const FRAMES = [
-  { id: 'classic', label: 'Classic Gold', emoji: '🎓', borderColor: '#D4AF37', bgColor: 'rgba(212,175,55,0.15)', cornerEmoji: '🎓' },
+  { id: 'classic', label: 'Classic Orange', emoji: '🎓', borderColor: '#E8720C', bgColor: 'rgba(232,114,12,0.15)', cornerEmoji: '🎓' },
   { id: 'confetti', label: 'Confetti', emoji: '🎉', borderColor: '#7c3aed', bgColor: 'rgba(124,58,237,0.15)', cornerEmoji: '🎊' },
   { id: 'floral', label: 'Floral', emoji: '🌸', borderColor: '#ec4899', bgColor: 'rgba(236,72,153,0.15)', cornerEmoji: '🌹' },
   { id: 'stars', label: 'Starlight', emoji: '⭐', borderColor: '#f59e0b', bgColor: 'rgba(245,158,11,0.15)', cornerEmoji: '✨' },
@@ -41,11 +41,19 @@ export default function PhotoBoothPage() {
     try {
       const s = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480, facingMode: 'user' } })
       setStream(s)
-      if (videoRef.current) videoRef.current.srcObject = s
     } catch {
       alert('Could not access camera. Please allow camera permissions, or upload a photo instead.')
     }
   }
+
+  // The <video> element only mounts once `stream` is set, so attach the
+  // stream here (after it exists in the DOM) instead of right after getUserMedia.
+  useEffect(() => {
+    if (stream && videoRef.current) {
+      videoRef.current.srcObject = stream
+      videoRef.current.play().catch(() => {})
+    }
+  }, [stream])
 
   const stopCamera = () => {
     stream?.getTracks().forEach((t) => t.stop())

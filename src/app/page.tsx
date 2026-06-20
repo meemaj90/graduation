@@ -67,7 +67,7 @@ export default function LandingPage() {
       <nav className="relative z-10 flex items-center justify-between px-6 sm:px-10 py-6 max-w-7xl mx-auto">
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg, #D4AF37, #E8720C)' }}>
+            style={{ background: 'linear-gradient(135deg, #E8720C, #E8720C)' }}>
             <GraduationCap className="w-5 h-5 text-white" />
           </div>
           <span className="font-serif font-bold text-white text-base sm:text-lg tracking-wide">{UNI_NAME}</span>
@@ -103,7 +103,7 @@ export default function LandingPage() {
         >
           <span className="text-white">Your </span>
           <span style={{
-            background: 'linear-gradient(135deg, #D4AF37 0%, #f0d060 40%, #E8720C 70%, #D4AF37 100%)',
+            background: 'linear-gradient(135deg, #E8720C 0%, #f0d060 40%, #E8720C 70%, #E8720C 100%)',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
             backgroundSize: '200% auto', animation: 'shimmerText 4s linear infinite'
           }}>
@@ -159,7 +159,7 @@ export default function LandingPage() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[
             { emoji: '🏛️', title: '360° Virtual Hall', desc: 'Step into an immersive 360° lobby and auditorium. Look around, click hotspots to explore every room.', color: '#1a3a8f' },
-            { emoji: '🎓', title: 'Graduate Profiles', desc: 'Browse every graduate, read their story, leave congratulatory messages and view their digital certificate.', color: '#D4AF37' },
+            { emoji: '🎓', title: 'Graduate Profiles', desc: 'Browse every graduate, read their story, leave congratulatory messages and view their digital certificate.', color: '#E8720C' },
             { emoji: '📡', title: 'Live BBB Stream', desc: 'Watch the full ceremony on a giant screen inside the 3D auditorium via BigBlueButton.', color: '#E8720C' },
             { emoji: '💌', title: 'Well Wishes', desc: 'Leave a personal congratulatory message for any graduate, right on their profile page.', color: '#3b82f6' },
             { emoji: '📸', title: 'Photo Booth', desc: 'Take graduation photos with custom frames and stickers, download and share instantly.', color: '#10b981' },

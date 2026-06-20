@@ -31,7 +31,7 @@ export default function ParticleBackground({ className, count = 80 }: ParticleBa
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    const colors = ['#D4AF37', '#F0D060', '#A88A20', '#ffffff', '#D4AF3780']
+    const colors = ['#E8720C', '#F0D060', '#A88A20', '#ffffff', '#E8720C80']
 
     const resize = () => {
       canvas.width = canvas.offsetWidth
@@ -99,11 +99,11 @@ export default function ParticleBackground({ className, count = 80 }: ParticleBa
         ctx.restore()
 
         // Draw glow
-        if (p.size > 1.5 && p.color.includes('D4AF37')) {
+        if (p.size > 1.5 && p.color.includes('E8720C')) {
           ctx.save()
           ctx.globalAlpha = p.opacity * fadeOpacity * 0.15
           const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 4)
-          gradient.addColorStop(0, '#D4AF37')
+          gradient.addColorStop(0, '#E8720C')
           gradient.addColorStop(1, 'transparent')
           ctx.fillStyle = gradient
           ctx.beginPath()
