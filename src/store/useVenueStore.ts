@@ -43,7 +43,7 @@ interface VenueState {
 
 // PASTE YOUR IMGBB URLS HERE (or update via Admin → Venue tab):
 const LOBBY_IMAGE_URL = 'https://i.ibb.co/Zp4DCmcd/Chat-GPT-Image-Jun-16-2026-10-50-40-PM.png'
-const AUDITORIUM_IMAGE_URL = 'https://i.ibb.co/SDP66t9K/Chat-GPT-Image-Jun-16-2026-10-49-45-PM.png'
+const AUDITORIUM_IMAGE_URL = 'https://i.ibb.co/C5KsWZmx/Chat-GPT-Image-Jun-20-2026-03-36-26-PM.png'
 
 const defaultScenes: SceneConfig[] = [
   {
@@ -84,10 +84,10 @@ const defaultScenes: SceneConfig[] = [
     type: 'image',
     src: AUDITORIUM_IMAGE_URL,
     title: 'Graduation Ceremony Hall',
-    initialYaw: -90,
-    initialPitch: 18,
+    initialYaw: 0,
+    initialPitch: 0,
     hotspots: [
-      { id: 'back', label: 'Back to Lobby', sublabel: 'Exit Hall', icon: '🚪', yaw: 90, pitch: 5, action: 'scene', target: 'lobby-image', color: '#6b7280' },
+      { id: 'back', label: 'Back to Lobby', sublabel: 'Exit Hall', icon: '🚪', yaw: 170, pitch: 0, action: 'scene', target: 'lobby-image', color: '#6b7280' },
     ],
   },
 ]
@@ -97,10 +97,10 @@ export const useVenueStore = create<VenueState>()(
     (set) => ({
       scenes: defaultScenes,
       bbbUrl: '',
-      bbbYaw: -90,
-      bbbPitch: 18,
-      bbbWidth: 820,
-      bbbHeight: 338,
+      bbbYaw: 0,
+      bbbPitch: 4,
+      bbbWidth: 700,
+      bbbHeight: 290,
 
       updateScene: (id, updates) =>
         set((state) => ({
@@ -150,6 +150,6 @@ export const useVenueStore = create<VenueState>()(
 
       setBbbSize: (w, h) => set({ bbbWidth: w, bbbHeight: h }),
     }),
-    { name: 'venue-store-v10' }
+    { name: 'venue-store-v11' }
   )
 )
