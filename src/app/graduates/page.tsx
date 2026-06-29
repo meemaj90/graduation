@@ -251,7 +251,7 @@ function WishPicker({ graduates, onPick, onClose }: { graduates: HofGraduate[]; 
       <motion.div initial={{ scale: 0.9, y: 24, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }}
         transition={{ type: 'spring', damping: 22, stiffness: 260 }}
         onClick={e => e.stopPropagation()}
-        className="relative w-full max-w-md rounded-[28px] overflow-hidden shadow-2xl max-h-[85vh] flex flex-col"
+        className="relative w-full max-w-2xl rounded-[28px] overflow-hidden shadow-2xl max-h-[85vh] flex flex-col"
         style={{
           background: 'linear-gradient(160deg,#0d1f5c 0%,#0a1440 55%,#081030 100%)',
           border: '1px solid rgba(212,175,55,0.5)',
@@ -265,51 +265,51 @@ function WishPicker({ graduates, onPick, onClose }: { graduates: HofGraduate[]; 
         ))}
 
         {/* Header banner */}
-        <div className="relative px-6 pt-7 pb-5 text-center"
-          style={{ background: 'linear-gradient(160deg, rgba(232,114,12,0.18), rgba(212,175,55,0.06) 60%, transparent)' }}>
+        <div className="relative px-8 pt-8 pb-6 text-center"
+          style={{ background: 'linear-gradient(160deg, rgba(232,114,12,0.22), rgba(212,175,55,0.07) 60%, transparent)' }}>
           <button onClick={onClose}
-            className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+            className="absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors"
             style={{ border: '1px solid rgba(255,255,255,0.12)' }}>
             <X className="w-4 h-4" />
           </button>
-          <div className="flex justify-center mb-2">
-            <div className="w-14 h-14 rounded-full flex items-center justify-center text-2xl"
-              style={{ background: 'linear-gradient(135deg,#E8720C,#E8720C)', boxShadow: '0 0 30px rgba(232,114,12,0.55)' }}>
-              <Heart className="w-6 h-6 text-white" fill="white" />
+          <div className="flex justify-center mb-3">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl"
+              style={{ background: 'linear-gradient(135deg,#F97316,#E8720C)', boxShadow: '0 0 36px rgba(232,114,12,0.6)' }}>
+              <Heart className="w-7 h-7 text-white" fill="white" />
             </div>
           </div>
-          <h2 className="text-xl font-black text-white tracking-tight">Drop a Well Wish</h2>
-          <p className="text-white/40 text-xs mt-1">Choose a graduate to send your congratulations to</p>
+          <h2 className="text-2xl font-black text-white tracking-tight">Drop a Well Wish</h2>
+          <p className="text-white/40 text-sm mt-1.5">Choose a graduate to send your congratulations to</p>
         </div>
 
         {/* Search */}
-        <div className="px-6 -mt-1 mb-2 relative z-10">
+        <div className="px-8 -mt-1 mb-3 relative z-10">
           <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name…" autoFocus
-              className="w-full pl-10 pr-4 py-3 rounded-2xl text-sm text-white placeholder-white/30 outline-none transition-all focus:ring-2"
+              className="w-full pl-11 pr-4 py-3.5 rounded-2xl text-sm text-white placeholder-white/30 outline-none transition-all focus:ring-2"
               style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(212,175,55,0.25)', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.3)' }} />
           </div>
         </div>
 
         {/* List */}
-        <div className="flex-1 overflow-y-auto px-6 pb-6 pt-2 space-y-4">
+        <div className="flex-1 overflow-y-auto px-8 pb-8 pt-2 space-y-5">
           {grouped.map(([yg, grads]) => (
             <div key={yg}>
-              <p className="text-[10px] font-black uppercase tracking-widest mb-2 px-1" style={{ color: 'rgba(212,175,55,0.7)' }}>{yg}</p>
-              <div className="space-y-1.5">
+              <p className="text-[11px] font-black uppercase tracking-widest mb-2.5 px-1" style={{ color: 'rgba(212,175,55,0.7)' }}>{yg}</p>
+              <div className="grid sm:grid-cols-2 gap-2.5">
                 {grads.map(g => (
-                  <motion.button key={g.id} onClick={() => onPick(g)} whileHover={{ x: 3 }} whileTap={{ scale: 0.98 }}
-                    className="w-full flex items-center gap-3 p-2.5 rounded-2xl text-left transition-colors group"
-                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                  <motion.button key={g.id} onClick={() => onPick(g)} whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}
+                    className="flex items-center gap-3.5 p-3.5 rounded-2xl text-left transition-colors group"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
                     <div className="rounded-full p-0.5 flex-shrink-0" style={{ background: 'linear-gradient(135deg,#F97316,#E8720C)' }}>
                       <div className="rounded-full p-0.5" style={{ background: '#0a1440' }}>
                         <Avatar name={g.name} photoUrl={g.photoUrl} size="sm" />
                       </div>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-white text-sm font-bold group-hover:text-orange-200 transition-colors">{g.name}</p>
-                      <p className="text-white/35 text-xs">{g.subject}</p>
+                      <p className="text-white text-sm font-bold group-hover:text-orange-200 transition-colors truncate">{g.name}</p>
+                      <p className="text-white/35 text-xs truncate">{g.subject}</p>
                     </div>
                     <Heart className="w-4 h-4 text-white/0 group-hover:text-orange-400/70 transition-colors flex-shrink-0" />
                   </motion.button>
@@ -318,7 +318,7 @@ function WishPicker({ graduates, onPick, onClose }: { graduates: HofGraduate[]; 
             </div>
           ))}
           {filtered.length === 0 && (
-            <p className="text-white/30 text-xs text-center py-10">No graduates found</p>
+            <p className="text-white/30 text-sm text-center py-12">No graduates found</p>
           )}
         </div>
       </motion.div>
