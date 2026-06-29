@@ -139,27 +139,26 @@ function GradModal({ grad, initialTab = 'about', onClose }: { grad: HofGraduate;
   const [tab, setTab] = useState<'about' | 'wishes'>(initialTab)
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(16px)' }}
       onClick={onClose}>
       <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9 }}
         onClick={e => e.stopPropagation()}
-        className="w-full max-w-md rounded-3xl overflow-hidden shadow-2xl my-4"
+        className="w-full max-w-4xl max-h-[88vh] rounded-3xl overflow-hidden shadow-2xl grid md:grid-cols-[280px_1fr]"
         style={{ background: 'linear-gradient(160deg,#0a1440,#0f2060)', border: '2px solid rgba(212,175,55,0.6)' }}>
 
-        {/* Header */}
-        <div className="relative px-6 pt-8 pb-4 text-center"
-          style={{ background: 'linear-gradient(160deg,rgba(212,175,55,0.12),transparent)' }}>
-          <button onClick={onClose}
-            className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center text-white/50 hover:text-white"
-            style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
-            <X className="w-4 h-4" />
-          </button>
-          <div className="flex justify-center mb-3">
-            <div className="rounded-full p-1" style={{ background: 'linear-gradient(135deg,#E8720C,#F97316)', boxShadow: '0 0 24px rgba(212,175,55,0.6)' }}>
-              <div className="rounded-full p-0.5 bg-[#0a1440]">
-                <Avatar name={grad.name} photoUrl={grad.photoUrl} size="lg" />
-              </div>
+        <button onClick={onClose}
+          className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+          style={{ border: '1px solid rgba(255,255,255,0.12)' }}>
+          <X className="w-4 h-4" />
+        </button>
+
+        {/* Profile sidebar */}
+        <div className="relative px-6 py-8 text-center flex flex-col items-center justify-center md:border-r"
+          style={{ background: 'linear-gradient(160deg,rgba(212,175,55,0.14),transparent)', borderColor: 'rgba(255,255,255,0.08)' }}>
+          <div className="rounded-full p-1 mb-4" style={{ background: 'linear-gradient(135deg,#E8720C,#F97316)', boxShadow: '0 0 28px rgba(212,175,55,0.6)' }}>
+            <div className="rounded-full p-0.5 bg-[#0a1440]">
+              <Avatar name={grad.name} photoUrl={grad.photoUrl} size="lg" />
             </div>
           </div>
           <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: '#E8720C' }}>⭐ Class of 2026 ⭐</p>
@@ -167,60 +166,63 @@ function GradModal({ grad, initialTab = 'about', onClose }: { grad: HofGraduate;
           <p className="text-sm font-semibold mt-0.5" style={{ color: '#f97316' }}>{grad.level}</p>
           <p className="text-white/40 text-xs">{grad.subject}</p>
           {grad.honors && (
-            <div className="mt-2 inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold"
+            <div className="mt-3 inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold"
               style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.4)', color: '#E8720C' }}>
               <Star className="w-3 h-3" fill="currentColor" /> {grad.honors}
             </div>
           )}
         </div>
 
-        <div className="flex mx-6 rounded-xl overflow-hidden mb-4" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
-          {(['about','wishes'] as const).map(t => (
-            <button key={t} onClick={() => setTab(t)}
-              className={`flex-1 py-2 text-xs font-bold capitalize transition-all ${tab === t ? 'text-white' : 'text-white/40'}`}
-              style={tab === t ? { background: 'rgba(255,255,255,0.1)' } : {}}>
-              {t === 'wishes' ? `💌 Wishes (${wishes.length})` : '📖 About'}
-            </button>
-          ))}
-        </div>
-
-        <div className="px-6 pb-6">
-          {tab === 'about' ? (
-            <div className="space-y-3">
-              {[
-                { label: 'Future Dream', val: grad.dream, col: '#E8720C' },
-                { label: 'Favourite Memory', val: grad.memory, col: '#60a5fa' },
-              ].map(({ label, val, col }) => (
-                <div key={label} className="p-4 rounded-2xl" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <p className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: col }}>{label}</p>
-                  <p className="text-white/80 text-sm italic">"{val}"</p>
-                </div>
-              ))}
-              <div className="p-4 rounded-2xl" style={{ background: 'rgba(37,99,235,0.1)', border: '1px solid rgba(37,99,235,0.25)' }}>
-                <p className="text-xs font-bold uppercase tracking-wider mb-1.5 text-blue-300">Message from Teacher</p>
-                <p className="text-white/70 text-sm italic">"{grad.teacherMsg}"</p>
-              </div>
-              <div className="p-4 rounded-2xl" style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.25)' }}>
-                <p className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: '#E8720C' }}>Message from Family</p>
-                <p className="text-white/70 text-sm italic">"{grad.parentMsg}"</p>
-              </div>
-              <button onClick={() => setTab('wishes')}
-                className="w-full py-3 rounded-2xl flex items-center justify-center gap-2 text-sm font-bold"
-                style={{ background: 'linear-gradient(135deg,#E8720C,#f97316)', color: '#0a1440' }}>
-                <Heart className="w-4 h-4" fill="currentColor" /> Leave Your Wishes for {grad.name.split(' ')[0]}
+        {/* Content */}
+        <div className="flex flex-col min-h-0">
+          <div className="flex mx-6 mt-6 rounded-xl overflow-hidden mb-4 flex-shrink-0" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+            {(['about','wishes'] as const).map(t => (
+              <button key={t} onClick={() => setTab(t)}
+                className={`flex-1 py-2.5 text-xs font-bold capitalize transition-all ${tab === t ? 'text-white' : 'text-white/40'}`}
+                style={tab === t ? { background: 'rgba(255,255,255,0.1)' } : {}}>
+                {t === 'wishes' ? `💌 Wishes (${wishes.length})` : '📖 About'}
               </button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <WishForm grad={grad} onDone={() => setTab('about')} />
-              <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 16 }}>
-                <p className="text-xs font-bold uppercase tracking-wider text-white/40 mb-3">
-                  {wishes.length > 0 ? `${wishes.length} wish${wishes.length !== 1 ? 'es' : ''} received` : 'No wishes yet'}
-                </p>
-                <WishesList gradId={grad.id} />
+            ))}
+          </div>
+
+          <div className="px-6 pb-6 flex-1 overflow-y-auto">
+            {tab === 'about' ? (
+              <div className="space-y-3">
+                {[
+                  { label: 'Future Dream', val: grad.dream, col: '#E8720C' },
+                  { label: 'Favourite Memory', val: grad.memory, col: '#60a5fa' },
+                ].map(({ label, val, col }) => (
+                  <div key={label} className="p-4 rounded-2xl" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <p className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: col }}>{label}</p>
+                    <p className="text-white/80 text-sm italic">"{val}"</p>
+                  </div>
+                ))}
+                <div className="p-4 rounded-2xl" style={{ background: 'rgba(37,99,235,0.1)', border: '1px solid rgba(37,99,235,0.25)' }}>
+                  <p className="text-xs font-bold uppercase tracking-wider mb-1.5 text-blue-300">Message from Teacher</p>
+                  <p className="text-white/70 text-sm italic">"{grad.teacherMsg}"</p>
+                </div>
+                <div className="p-4 rounded-2xl" style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.25)' }}>
+                  <p className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: '#E8720C' }}>Message from Family</p>
+                  <p className="text-white/70 text-sm italic">"{grad.parentMsg}"</p>
+                </div>
+                <button onClick={() => setTab('wishes')}
+                  className="w-full py-3 rounded-2xl flex items-center justify-center gap-2 text-sm font-bold"
+                  style={{ background: 'linear-gradient(135deg,#E8720C,#f97316)', color: '#0a1440' }}>
+                  <Heart className="w-4 h-4" fill="currentColor" /> Leave Your Wishes for {grad.name.split(' ')[0]}
+                </button>
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="space-y-4">
+                <WishForm grad={grad} onDone={() => setTab('about')} />
+                <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 16 }}>
+                  <p className="text-xs font-bold uppercase tracking-wider text-white/40 mb-3">
+                    {wishes.length > 0 ? `${wishes.length} wish${wishes.length !== 1 ? 'es' : ''} received` : 'No wishes yet'}
+                  </p>
+                  <WishesList gradId={grad.id} />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </motion.div>
     </motion.div>
