@@ -1,7 +1,7 @@
 'use client'
 import { useState, useMemo, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, X, Star, Heart, Camera, Send, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react'
+import { Search, X, Star, Heart, Camera, Send, ChevronDown, ChevronUp, ArrowLeft, Share2, Download } from 'lucide-react'
 import Link from 'next/link'
 import { useHallStore, HofGraduate } from '../../store/useHallStore'
 
@@ -133,10 +133,133 @@ function WishesList({ gradId }: { gradId: string }) {
   )
 }
 
+// ── Share card generator ──────────────────────────────────────────────────────
+async function downloadShareCard(grad: HofGraduate, wishes: { guestName: string; message: string }[]) {
+  const W = 1080, H = 1350
+  const canvas = document.createElement('canvas')
+  canvas.width = W; canvas.height = H
+  const ctx = canvas.getContext('2d')!
+
+  // Background
+  const bg = ctx.createLinearGradient(0, 0, W, H)
+  bg.addColorStop(0, '#0d1f5c'); bg.addColorStop(1, '#081030')
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H)
+
+  // Orange stripe top
+  ctx.fillStyle = '#E8720C'; ctx.fillRect(0, 0, W, 12)
+
+  // School name
+  ctx.fillStyle = '#E8720C'; ctx.font = 'bold 36px Georgia, serif'
+  ctx.textAlign = 'center'; ctx.fillText('NEXTORA ACADEMY · CLASS OF 2026', W / 2, 70)
+
+  // Photo circle
+  const cx = W / 2, cy = 260, r = 160
+  ctx.save()
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.clip()
+  if (grad.photoUrl && !grad.photoUrl.startsWith('https://api.dicebear')) {
+    try {
+      const img = await new Promise<HTMLImageElement>((res, rej) => {
+        const i = new Image(); i.crossOrigin = 'anonymous'
+        i.onload = () => res(i); i.onerror = rej; i.src = grad.photoUrl!
+      })
+      ctx.drawImage(img, cx - r, cy - r, r * 2, r * 2)
+    } catch { ctx.fillStyle = '#1a3a8f'; ctx.fillRect(cx - r, cy - r, r * 2, r * 2) }
+  } else {
+    ctx.fillStyle = '#1a3a8f'; ctx.fillRect(cx - r, cy - r, r * 2, r * 2)
+    ctx.restore(); ctx.save()
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 100px Georgia'
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+    ctx.fillText(grad.name.split(' ').map(n => n[0]).join('').slice(0,2), cx, cy)
+  }
+  ctx.restore()
+
+  // Ring around photo
+  ctx.strokeStyle = '#E8720C'; ctx.lineWidth = 8
+  ctx.beginPath(); ctx.arc(cx, cy, r + 8, 0, Math.PI * 2); ctx.stroke()
+
+  // Name + level
+  ctx.textBaseline = 'alphabetic'
+  ctx.fillStyle = '#ffffff'; ctx.font = 'bold 72px Georgia, serif'
+  ctx.textAlign = 'center'; ctx.fillText(grad.name, W / 2, 490)
+  ctx.fillStyle = '#f97316'; ctx.font = '36px Georgia, serif'
+  ctx.fillText(grad.level, W / 2, 540)
+  ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '30px Arial, sans-serif'
+  ctx.fillText(`Favourite Subject: ${grad.subject}`, W / 2, 585)
+
+  const drawCard = (title: string, text: string, y: number, color: string) => {
+    ctx.fillStyle = 'rgba(255,255,255,0.05)'
+    roundRect(ctx, 60, y, W - 120, 140, 20); ctx.fill()
+    ctx.fillStyle = color; ctx.font = 'bold 26px Arial, sans-serif'
+    ctx.textAlign = 'left'; ctx.fillText(title, 90, y + 38)
+    ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.font = 'italic 28px Georgia, serif'
+    wrapText(ctx, `"${text}"`, 90, y + 78, W - 180, 34)
+  }
+
+  drawCard('🌟 I want to become...', grad.dream, 615, '#E8720C')
+  drawCard('💛 My favourite memory', grad.memory, 775, '#60a5fa')
+
+  // Wishes strip
+  if (wishes.length > 0) {
+    ctx.fillStyle = 'rgba(232,114,12,0.12)'
+    roundRect(ctx, 60, 935, W - 120, 330, 20); ctx.fill()
+    ctx.fillStyle = '#E8720C'; ctx.font = 'bold 28px Arial'
+    ctx.textAlign = 'center'; ctx.fillText(`💌 ${wishes.length} Well Wish${wishes.length !== 1 ? 'es' : ''}`, W / 2, 975)
+    const shown = wishes.slice(0, 3)
+    shown.forEach((w, i) => {
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 24px Arial'
+      ctx.textAlign = 'left'; ctx.fillText(w.guestName, 90, 1015 + i * 82)
+      ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.font = '22px Arial'
+      wrapText(ctx, w.message, 90, 1042 + i * 82, W - 180, 26)
+    })
+  }
+
+  // Footer
+  ctx.fillStyle = '#E8720C'; ctx.fillRect(0, H - 12, W, 12)
+
+  const url = canvas.toDataURL('image/png')
+  const a = document.createElement('a'); a.href = url
+  a.download = `${grad.name.replace(/\s+/g,'-')}-graduation-2026.png`; a.click()
+
+  // Also try Web Share API for mobile (WhatsApp/Instagram etc.)
+  try {
+    const blob = await (await fetch(url)).blob()
+    const file = new File([blob], `${grad.name}-graduation.png`, { type: 'image/png' })
+    if (navigator.canShare?.({ files: [file] })) {
+      await navigator.share({ title: `${grad.name} - Nextora Academy 2026`, text: `🎓 Congratulations to ${grad.name}! Class of 2026, Nextora Academy.`, files: [file] })
+    }
+  } catch { /* share not available or cancelled — download already triggered */ }
+}
+
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath(); ctx.moveTo(x + r, y)
+  ctx.lineTo(x + w - r, y); ctx.arcTo(x + w, y, x + w, y + r, r)
+  ctx.lineTo(x + w, y + h - r); ctx.arcTo(x + w, y + h, x + w - r, y + h, r)
+  ctx.lineTo(x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r)
+  ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r); ctx.closePath()
+}
+
+function wrapText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxW: number, lineH: number) {
+  const words = text.split(' '); let line = ''
+  for (const word of words) {
+    const test = line ? `${line} ${word}` : word
+    if (ctx.measureText(test).width > maxW && line) {
+      ctx.fillText(line, x, y); y += lineH; line = word
+    } else { line = test }
+  }
+  if (line) ctx.fillText(line, x, y)
+}
+
 // ── Modal ─────────────────────────────────────────────────────────────────────
 function GradModal({ grad, initialTab = 'about', onClose }: { grad: HofGraduate; initialTab?: 'about' | 'wishes'; onClose: () => void }) {
   const wishes = useHallStore(s => s.wishes[grad.id] ?? [])
   const [tab, setTab] = useState<'about' | 'wishes'>(initialTab)
+  const [sharing, setSharing] = useState(false)
+
+  const handleShare = async () => {
+    setSharing(true)
+    try { await downloadShareCard(grad, wishes) } finally { setSharing(false) }
+  }
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 z-[60] flex items-center justify-center p-4"
@@ -165,12 +288,15 @@ function GradModal({ grad, initialTab = 'about', onClose }: { grad: HofGraduate;
           <h2 className="text-2xl font-black text-white">{grad.name}</h2>
           <p className="text-sm font-semibold mt-0.5" style={{ color: '#f97316' }}>{grad.level}</p>
           <p className="text-white/40 text-xs">{grad.subject}</p>
-          {grad.honors && (
-            <div className="mt-3 inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold"
-              style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid rgba(212,175,55,0.4)', color: '#E8720C' }}>
-              <Star className="w-3 h-3" fill="currentColor" /> {grad.honors}
-            </div>
-          )}
+
+          {/* Share / Download card */}
+          <button onClick={handleShare} disabled={sharing}
+            className="mt-5 flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-50 hover:scale-105"
+            style={{ background: 'linear-gradient(135deg,#E8720C,#f97316)', color: '#0a1440' }}>
+            <Share2 className="w-4 h-4" />
+            {sharing ? 'Generating…' : 'Share / Download Card'}
+          </button>
+          <p className="text-white/25 text-xs mt-2 px-2">Save as image · share on WhatsApp, Instagram & more</p>
         </div>
 
         {/* Content */}
@@ -189,8 +315,8 @@ function GradModal({ grad, initialTab = 'about', onClose }: { grad: HofGraduate;
             {tab === 'about' ? (
               <div className="space-y-3">
                 {[
-                  { label: 'Future Dream', val: grad.dream, col: '#E8720C' },
-                  { label: 'Favourite Memory', val: grad.memory, col: '#60a5fa' },
+                  { label: '🌟 What I Want to Become', val: grad.dream, col: '#E8720C' },
+                  { label: '💛 My Favourite Memory in Class', val: grad.memory, col: '#60a5fa' },
                 ].map(({ label, val, col }) => (
                   <div key={label} className="p-4 rounded-2xl" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
                     <p className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: col }}>{label}</p>
@@ -198,26 +324,35 @@ function GradModal({ grad, initialTab = 'about', onClose }: { grad: HofGraduate;
                   </div>
                 ))}
                 <div className="p-4 rounded-2xl" style={{ background: 'rgba(37,99,235,0.1)', border: '1px solid rgba(37,99,235,0.25)' }}>
-                  <p className="text-xs font-bold uppercase tracking-wider mb-1.5 text-blue-300">Message from Teacher</p>
+                  <p className="text-xs font-bold uppercase tracking-wider mb-1.5 text-blue-300">📝 Teacher&apos;s Message</p>
                   <p className="text-white/70 text-sm italic">"{grad.teacherMsg}"</p>
                 </div>
                 <div className="p-4 rounded-2xl" style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.25)' }}>
-                  <p className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: '#E8720C' }}>Message from Family</p>
+                  <p className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: '#E8720C' }}>❤️ Family&apos;s Message</p>
                   <p className="text-white/70 text-sm italic">"{grad.parentMsg}"</p>
                 </div>
                 <button onClick={() => setTab('wishes')}
                   className="w-full py-3 rounded-2xl flex items-center justify-center gap-2 text-sm font-bold"
                   style={{ background: 'linear-gradient(135deg,#E8720C,#f97316)', color: '#0a1440' }}>
-                  <Heart className="w-4 h-4" fill="currentColor" /> Leave Your Wishes for {grad.name.split(' ')[0]}
+                  <Heart className="w-4 h-4" fill="currentColor" /> Drop a Well Wish for {grad.name.split(' ')[0]}
                 </button>
               </div>
             ) : (
               <div className="space-y-4">
                 <WishForm grad={grad} onDone={() => setTab('about')} />
                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 16 }}>
-                  <p className="text-xs font-bold uppercase tracking-wider text-white/40 mb-3">
-                    {wishes.length > 0 ? `${wishes.length} wish${wishes.length !== 1 ? 'es' : ''} received` : 'No wishes yet'}
-                  </p>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs font-bold uppercase tracking-wider text-white/40">
+                      {wishes.length > 0 ? `${wishes.length} wish${wishes.length !== 1 ? 'es' : ''} received` : 'No wishes yet'}
+                    </p>
+                    {wishes.length > 0 && (
+                      <button onClick={handleShare} disabled={sharing}
+                        className="flex items-center gap-1 text-xs font-semibold disabled:opacity-50 transition-colors"
+                        style={{ color: '#E8720C' }}>
+                        <Download className="w-3 h-3" />{sharing ? 'Saving…' : 'Save Card with Wishes'}
+                      </button>
+                    )}
+                  </div>
                   <WishesList gradId={grad.id} />
                 </div>
               </div>

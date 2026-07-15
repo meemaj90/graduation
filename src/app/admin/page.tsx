@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Lock, Settings, Users, Radio, Link as LinkIcon, Trash2, Plus, LogOut, ChevronRight, Mic, Map, Camera, Edit2, Save, X, Clock } from 'lucide-react'
 import { useGraduationStore } from '../../store/useGraduationStore'
@@ -243,12 +243,8 @@ function HallTab() {
   const [adding, setAdding] = useState(false)
   const [newData, setNewData] = useState<Partial<HofGraduate>>({})
 
-  const startEdit = (g: HofGraduate) => {
-    setEditing(g.id); setEditData({ ...g })
-  }
-  const saveEdit = () => {
-    if (editing) { updateGraduate(editing, editData); setEditing(null) }
-  }
+  const startEdit = (g: HofGraduate) => { setEditing(g.id); setEditData({ ...g }) }
+  const saveEdit = () => { if (editing) { updateGraduate(editing, editData); setEditing(null) } }
   const saveNew = () => {
     if (!newData.name || !newData.level) return
     addGraduate({
@@ -261,19 +257,66 @@ function HallTab() {
       memory: newData.memory ?? '',
       teacherMsg: newData.teacherMsg ?? '',
       parentMsg: newData.parentMsg ?? '',
-      honors: newData.honors ?? '',
     })
     setAdding(false); setNewData({})
   }
 
   const LEVELS = ['UKG → Year 1','Year 6 → Year 7','Year 9 → Year 10'] as const
 
-  const Field = ({ label, val, onChange }: { label: string; val: string; onChange: (v: string) => void }) => (
+  const Field = ({ label, val, onChange, placeholder }: { label: string; val: string; onChange: (v: string) => void; placeholder?: string }) => (
     <div>
       <label className="text-xs text-white/40 uppercase tracking-wider">{label}</label>
-      <input value={val} onChange={e => onChange(e.target.value)}
-        className="w-full mt-0.5 px-3 py-2 rounded-xl text-sm text-white outline-none"
+      <input value={val} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+        className="w-full mt-0.5 px-3 py-2 rounded-xl text-sm text-white outline-none placeholder-white/20"
         style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }} />
+    </div>
+  )
+
+  const PhotoUpload = ({ val, onChange }: { val: string | null; onChange: (v: string | null) => void }) => {
+    const ref = useRef<HTMLInputElement>(null)
+    const pick = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]; if (!file) return
+      const reader = new FileReader()
+      reader.onload = ev => onChange(ev.target?.result as string)
+      reader.readAsDataURL(file)
+    }
+    return (
+      <div>
+        <label className="text-xs text-white/40 uppercase tracking-wider">Child's Photo</label>
+        <div className="mt-0.5 flex items-center gap-2">
+          {val && <img src={val} alt="preview" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />}
+          <button onClick={() => ref.current?.click()}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-white/60 hover:text-white transition-colors"
+            style={{ border: '1px dashed rgba(255,255,255,0.2)' }}>
+            <Camera className="w-3.5 h-3.5" />{val ? 'Change Photo' : 'Upload Photo'}
+          </button>
+          {val && <button onClick={() => onChange(null)} className="text-xs text-red-400/60 hover:text-red-400">Remove</button>}
+          <input ref={ref} type="file" accept="image/*" onChange={pick} className="hidden" />
+        </div>
+      </div>
+    )
+  }
+
+  const GradForm = ({ data, setData }: { data: Partial<HofGraduate>; setData: (fn: (d: Partial<HofGraduate>) => Partial<HofGraduate>) => void }) => (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Full Name *" val={data.name ?? ''} onChange={v => setData(d => ({ ...d, name: v }))} />
+        <div>
+          <label className="text-xs text-white/40 uppercase tracking-wider">Year Level *</label>
+          <select value={data.level ?? ''} onChange={e => setData(d => ({ ...d, level: e.target.value as HofGraduate['level'] }))}
+            className="w-full mt-0.5 px-3 py-2 rounded-xl text-sm text-white outline-none"
+            style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }}>
+            <option value="">Select level</option>
+            {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
+          </select>
+        </div>
+        <Field label="Favourite Subject" val={data.subject ?? ''} onChange={v => setData(d => ({ ...d, subject: v }))} placeholder="e.g. Mathematics, Art…" />
+        <Field label="What Would They Like to Become?" val={data.dream ?? ''} onChange={v => setData(d => ({ ...d, dream: v }))} placeholder="e.g. A doctor who helps people!" />
+      </div>
+      <PhotoUpload val={data.photoUrl ?? null} onChange={v => setData(d => ({ ...d, photoUrl: v }))} />
+      <Field label="Child's Favourite Memory in Class" val={data.memory ?? ''} onChange={v => setData(d => ({ ...d, memory: v }))} placeholder="e.g. The day we made a volcano in science…" />
+      <Field label="Teacher's Message" val={data.teacherMsg ?? ''} onChange={v => setData(d => ({ ...d, teacherMsg: v }))} />
+      <Field label="Family's Message" val={data.parentMsg ?? ''} onChange={v => setData(d => ({ ...d, parentMsg: v }))} />
     </div>
   )
 
@@ -288,29 +331,10 @@ function HallTab() {
         </button>
       </div>
 
-      {/* Add form */}
       {adding && (
         <div className="rounded-2xl p-5 space-y-3" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(212,175,55,0.3)' }}>
           <p className="text-white font-semibold">New Graduate</p>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Full Name *" val={newData.name ?? ''} onChange={v => setNewData(d => ({ ...d, name: v }))} />
-            <div>
-              <label className="text-xs text-white/40 uppercase tracking-wider">Year Level *</label>
-              <select value={newData.level ?? ''} onChange={e => setNewData(d => ({ ...d, level: e.target.value as HofGraduate['level'] }))}
-                className="w-full mt-0.5 px-3 py-2 rounded-xl text-sm text-white outline-none"
-                style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                <option value="">Select level</option>
-                {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
-              </select>
-            </div>
-            <Field label="Subject" val={newData.subject ?? ''} onChange={v => setNewData(d => ({ ...d, subject: v }))} />
-            <Field label="Honors" val={newData.honors ?? ''} onChange={v => setNewData(d => ({ ...d, honors: v }))} />
-            <Field label="Photo URL (optional)" val={newData.photoUrl ?? ''} onChange={v => setNewData(d => ({ ...d, photoUrl: v }))} />
-            <Field label="Dream" val={newData.dream ?? ''} onChange={v => setNewData(d => ({ ...d, dream: v }))} />
-          </div>
-          <Field label="Favourite Memory" val={newData.memory ?? ''} onChange={v => setNewData(d => ({ ...d, memory: v }))} />
-          <Field label="Teacher Message" val={newData.teacherMsg ?? ''} onChange={v => setNewData(d => ({ ...d, teacherMsg: v }))} />
-          <Field label="Parent Message" val={newData.parentMsg ?? ''} onChange={v => setNewData(d => ({ ...d, parentMsg: v }))} />
+          <GradForm data={newData} setData={setNewData} />
           <div className="flex gap-2">
             <button onClick={saveNew} className="px-5 py-2 rounded-xl text-sm font-bold" style={{ background: '#E8720C', color: '#0a1440' }}>Save</button>
             <button onClick={() => { setAdding(false); setNewData({}) }} className="px-5 py-2 rounded-xl text-sm font-bold text-white/50" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>Cancel</button>
@@ -323,24 +347,7 @@ function HallTab() {
           style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
           {editing === g.id ? (
             <div className="p-5 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Full Name" val={editData.name ?? ''} onChange={v => setEditData(d => ({ ...d, name: v }))} />
-                <div>
-                  <label className="text-xs text-white/40 uppercase tracking-wider">Year Level</label>
-                  <select value={editData.level ?? ''} onChange={e => setEditData(d => ({ ...d, level: e.target.value as HofGraduate['level'] }))}
-                    className="w-full mt-0.5 px-3 py-2 rounded-xl text-sm text-white outline-none"
-                    style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                    {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
-                  </select>
-                </div>
-                <Field label="Subject" val={editData.subject ?? ''} onChange={v => setEditData(d => ({ ...d, subject: v }))} />
-                <Field label="Honors" val={editData.honors ?? ''} onChange={v => setEditData(d => ({ ...d, honors: v }))} />
-                <Field label="Photo URL" val={editData.photoUrl ?? ''} onChange={v => setEditData(d => ({ ...d, photoUrl: v || null }))} />
-                <Field label="Dream" val={editData.dream ?? ''} onChange={v => setEditData(d => ({ ...d, dream: v }))} />
-              </div>
-              <Field label="Favourite Memory" val={editData.memory ?? ''} onChange={v => setEditData(d => ({ ...d, memory: v }))} />
-              <Field label="Teacher Message" val={editData.teacherMsg ?? ''} onChange={v => setEditData(d => ({ ...d, teacherMsg: v }))} />
-              <Field label="Parent Message" val={editData.parentMsg ?? ''} onChange={v => setEditData(d => ({ ...d, parentMsg: v }))} />
+              <GradForm data={editData} setData={setEditData} />
               <div className="flex gap-2">
                 <button onClick={saveEdit} className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-sm font-bold" style={{ background: '#E8720C', color: '#0a1440' }}><Save className="w-3.5 h-3.5" /> Save</button>
                 <button onClick={() => setEditing(null)} className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-sm font-bold text-white/50" style={{ border: '1px solid rgba(255,255,255,0.1)' }}><X className="w-3.5 h-3.5" /> Cancel</button>
@@ -348,23 +355,17 @@ function HallTab() {
             </div>
           ) : (
             <div className="flex items-center gap-3 px-4 py-3">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm text-white flex-shrink-0"
-                style={{ background: 'rgba(212,175,55,0.2)' }}>
-                {g.name.split(' ').map(n => n[0]).join('').slice(0,2)}
-              </div>
+              {g.photoUrl
+                ? <img src={g.photoUrl} alt={g.name} className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+                : <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm text-white flex-shrink-0" style={{ background: 'rgba(212,175,55,0.2)' }}>{g.name.split(' ').map(n => n[0]).join('').slice(0,2)}</div>
+              }
               <div className="min-w-0 flex-1">
                 <p className="text-white text-sm font-semibold truncate">{g.name}</p>
-                <p className="text-white/40 text-xs truncate">{g.level} · {g.honors || 'No award'}</p>
+                <p className="text-white/40 text-xs truncate">{g.level} · {g.subject || '—'}</p>
               </div>
               <div className="flex items-center gap-1">
-                <button onClick={() => startEdit(g)}
-                  className="p-2 rounded-lg text-white/40 hover:text-white hover:bg-white/5 transition-colors">
-                  <Edit2 className="w-4 h-4" />
-                </button>
-                <button onClick={() => removeGraduate(g.id)}
-                  className="p-2 rounded-lg text-red-500/40 hover:text-red-400 hover:bg-red-500/10 transition-colors">
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <button onClick={() => startEdit(g)} className="p-2 rounded-lg text-white/40 hover:text-white hover:bg-white/5 transition-colors"><Edit2 className="w-4 h-4" /></button>
+                <button onClick={() => removeGraduate(g.id)} className="p-2 rounded-lg text-red-500/40 hover:text-red-400 hover:bg-red-500/10 transition-colors"><Trash2 className="w-4 h-4" /></button>
               </div>
             </div>
           )}
