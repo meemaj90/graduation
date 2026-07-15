@@ -7,7 +7,7 @@ import { useHallStore, HofGraduate } from '../../store/useHallStore'
 
 const YEAR_GROUPS = ['All', 'UKG → Year 1', 'Year 6 → Year 7', 'Year 9 → Year 10'] as const
 
-const WALL_IMAGE_URL = 'https://i.ibb.co/q3vsvZk5/Chat-GPT-Image-Jul-1-2026-12-41-41-PM.png'
+const WALL_IMAGE_URL = 'https://i.ibb.co/N22G2rz5/Chat-GPT-Image-Jul-15-2026-06-11-56-PM.png'
 
 // Avatar with gold frame
 function Avatar({ name, photoUrl, size = 'md' }: { name: string; photoUrl: string | null; size?: 'sm' | 'md' | 'lg' }) {
