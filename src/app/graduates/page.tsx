@@ -165,29 +165,55 @@ function measureLines(ctx: CanvasRenderingContext2D, text: string, maxW: number)
 
 // ── Share card generator ──────────────────────────────────────────────────────
 async function downloadShareCard(grad: HofGraduate, wishes: { guestName: string; message: string }[]) {
-  const W = 1080, H = 1920
+  const W = 1080
+  // We draw onto an oversized canvas, then crop to content at the end
+  const MAX_H = 3000
   const MARGIN = 60, INNER = W - MARGIN * 2
   const canvas = document.createElement('canvas')
-  canvas.width = W; canvas.height = H
+  canvas.width = W; canvas.height = MAX_H
   const ctx = canvas.getContext('2d')!
   const isSecondary = grad.level === 'Year 6 → Year 7' || grad.level === 'Year 9 → Year 10'
 
-  // ── Background ──
-  const bg = ctx.createLinearGradient(0, 0, 0, H)
-  bg.addColorStop(0, '#0d1f5c'); bg.addColorStop(0.6, '#0a1440'); bg.addColorStop(1, '#060c28')
-  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H)
-
-  // subtle star dots
-  ctx.fillStyle = 'rgba(255,255,255,0.04)'
-  for (let i = 0; i < 60; i++) {
-    const px = (grad.name.charCodeAt(i % grad.name.length) * 139 + i * 79) % W
-    const py = (grad.name.charCodeAt((i + 1) % grad.name.length) * 163 + i * 61) % H
-    ctx.beginPath(); ctx.arc(px, py, 1.5 + (i % 3), 0, Math.PI * 2); ctx.fill()
-  }
-
-  // ── Top stripe ──
   const stripe = ctx.createLinearGradient(0, 0, W, 0)
   stripe.addColorStop(0, '#E8720C'); stripe.addColorStop(1, '#f97316')
+
+  // ── Background: try to load hall image, fallback to gradient ──
+  let bgLoaded = false
+  try {
+    const bgImg = await new Promise<HTMLImageElement>((res, rej) => {
+      const i = new Image(); i.crossOrigin = 'anonymous'
+      i.onload = () => res(i); i.onerror = rej
+      i.src = 'https://i.ibb.co/Gg7mm9t/Chat-GPT-Image-Jul-15-2026-06-14-24-PM.png'
+      setTimeout(() => rej(new Error('timeout')), 6000)
+    })
+    // tile/cover the bg across full oversized canvas
+    const scale = Math.max(W / bgImg.width, MAX_H / bgImg.height)
+    const bw = bgImg.width * scale, bh = bgImg.height * scale
+    ctx.drawImage(bgImg, (W - bw) / 2, 0, bw, bh)
+    bgLoaded = true
+  } catch { /* fallback */ }
+
+  if (!bgLoaded) {
+    const bg = ctx.createLinearGradient(0, 0, 0, MAX_H)
+    bg.addColorStop(0, '#0d1f5c'); bg.addColorStop(0.6, '#0a1440'); bg.addColorStop(1, '#060c28')
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, MAX_H)
+    // star dots
+    ctx.fillStyle = 'rgba(255,255,255,0.04)'
+    for (let i = 0; i < 80; i++) {
+      const px = (grad.name.charCodeAt(i % grad.name.length) * 139 + i * 79) % W
+      const py = (grad.name.charCodeAt((i + 1) % grad.name.length) * 163 + i * 61) % MAX_H
+      ctx.beginPath(); ctx.arc(px, py, 1.5 + (i % 3), 0, Math.PI * 2); ctx.fill()
+    }
+  }
+
+  // Dark overlay for readability
+  const overlay = ctx.createLinearGradient(0, 0, 0, MAX_H)
+  overlay.addColorStop(0, 'rgba(5,12,42,0.88)')
+  overlay.addColorStop(0.5, 'rgba(5,12,42,0.82)')
+  overlay.addColorStop(1, 'rgba(5,12,42,0.88)')
+  ctx.fillStyle = overlay; ctx.fillRect(0, 0, W, MAX_H)
+
+  // ── Top stripe ──
   ctx.fillStyle = stripe; ctx.fillRect(0, 0, W, 16)
 
   // ── Header ──
@@ -243,7 +269,7 @@ async function downloadShareCard(grad: HofGraduate, wishes: { guestName: string;
   let y = 530
 
   const drawCard = (icon: string, title: string, text: string, color: string, bgAlpha = 0.04) => {
-    if (!text || y > H - 160) return
+    if (!text) return
     ctx.font = 'italic 24px Georgia, serif'
     const lines = measureLines(ctx, `"${text}"`, INNER - 30)
     const cardH = 50 + lines * 30 + 20
@@ -265,7 +291,7 @@ async function downloadShareCard(grad: HofGraduate, wishes: { guestName: string;
     drawCard('🏆', 'Achievement Most Proud Of', grad.achievement ?? '', '#22c55e')
     drawCard('💛', 'A Memorable Experience', grad.memory, '#60a5fa')
     drawCard('🚀', 'Dream Career & Future Goal', grad.dream, '#f97316')
-    if (grad.quote && y < H - 160) {
+    if (grad.quote) {
       ctx.font = 'italic 26px Georgia, serif'
       const qLines = measureLines(ctx, `"${grad.quote}"`, INNER - 30)
       const qH = 50 + qLines * 32 + 20
@@ -288,48 +314,52 @@ async function downloadShareCard(grad: HofGraduate, wishes: { guestName: string;
   drawCard('❤️', 'Message from Parent / Guardian', grad.parentMsg, '#ec4899', 0.05)
 
   // ── Wishes ──
-  if (wishes.length > 0 && y < H - 200) {
-    y += 10
+  if (wishes.length > 0) {
+    y += 16
     ctx.strokeStyle = 'rgba(232,114,12,0.25)'; ctx.lineWidth = 2
     ctx.beginPath(); ctx.moveTo(MARGIN, y); ctx.lineTo(W - MARGIN, y); ctx.stroke()
-    y += 28
+    y += 32
     ctx.textAlign = 'center'; ctx.fillStyle = '#E8720C'; ctx.font = 'bold 28px Arial'
     ctx.fillText(`💌 Well Wishes (${wishes.length})`, W / 2, y)
-    y += 32
+    y += 36
 
     let wishCount = 0
     for (const w of wishes) {
-      if (y > H - 120) break
       ctx.font = '22px Arial'
       const msgLines = measureLines(ctx, w.message, INNER - 30)
       const wH = 44 + msgLines * 26 + 14
-      ctx.fillStyle = 'rgba(255,255,255,0.03)'
+      ctx.fillStyle = 'rgba(0,0,0,0.3)'
       roundRect(ctx, MARGIN, y, INNER, wH, 14); ctx.fill()
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 1
+      roundRect(ctx, MARGIN, y, INNER, wH, 14); ctx.stroke()
       ctx.textAlign = 'left'; ctx.fillStyle = '#fff'; ctx.font = 'bold 22px Arial'
       ctx.fillText(w.guestName, MARGIN + 20, y + 28)
-      ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.font = '21px Arial'
+      ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.font = '21px Arial'
       wrapText(ctx, w.message, MARGIN + 20, y + 54, INNER - 30, 26)
       y += wH + 8; wishCount++
-    }
-    if (wishCount < wishes.length) {
-      ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.font = '22px Arial'; ctx.textAlign = 'center'
-      ctx.fillText(`+ ${wishes.length - wishCount} more wishes`, W / 2, y + 24)
     }
   }
 
   // ── Footer stripe ──
-  ctx.fillStyle = stripe; ctx.fillRect(0, H - 16, W, 16)
-  ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.font = '20px Arial'; ctx.textAlign = 'center'
-  ctx.fillText('nextora.academy · Class of 2026', W / 2, H - 26)
+  y += 24
+  ctx.fillStyle = stripe; ctx.fillRect(0, y, W, 16)
+  ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.font = '20px Arial'; ctx.textAlign = 'center'
+  ctx.fillText('nextora.academy · Class of 2026', W / 2, y - 10)
+  y += 16
 
-  // ── Export ──
-  const url = canvas.toDataURL('image/png')
+  // ── Crop canvas to content then export ──
+  const finalH = y
+  const cropped = document.createElement('canvas')
+  cropped.width = W; cropped.height = finalH
+  const ctx2 = cropped.getContext('2d')!
+  ctx2.drawImage(canvas, 0, 0)
+  const url = cropped.toDataURL('image/png')
   const a = document.createElement('a'); a.href = url
   a.download = `${grad.name.replace(/\s+/g, '-')}-graduation-2026.png`; a.click()
 
   try {
     const blob = await (await fetch(url)).blob()
-    const file = new File([blob], `${grad.name}-graduation.png`, { type: 'image/png' })
+    const file = new File([blob], `${grad.name.replace(/\s+/g, '-')}-graduation.png`, { type: 'image/png' })
     if (navigator.canShare?.({ files: [file] })) {
       await navigator.share({
         title: `${grad.name} - Nextora Academy 2026`,
@@ -503,73 +533,82 @@ function WishPicker({ graduates, onPick, onClose }: { graduates: HofGraduate[]; 
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(16px)' }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4"
+      style={{ background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)' }}
       onClick={onClose}>
-      <motion.div initial={{ scale: 0.9, y: 24, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }}
+      <motion.div initial={{ scale: 0.92, y: 24, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }}
         transition={{ type: 'spring', damping: 22, stiffness: 260 }}
         onClick={e => e.stopPropagation()}
-        className="relative w-full max-w-2xl rounded-[28px] overflow-hidden shadow-2xl max-h-[85vh] flex flex-col"
+        className="relative w-full max-w-5xl rounded-[28px] overflow-hidden shadow-2xl max-h-[90vh] flex flex-col"
         style={{
-          background: 'linear-gradient(160deg,#0d1f5c 0%,#0a1440 55%,#081030 100%)',
           border: '1px solid rgba(212,175,55,0.5)',
-          boxShadow: '0 0 0 1px rgba(212,175,55,0.15), 0 25px 80px -10px rgba(0,0,0,0.7), 0 0 60px rgba(232,114,12,0.18)',
+          boxShadow: '0 0 0 1px rgba(212,175,55,0.15), 0 32px 80px -10px rgba(0,0,0,0.8), 0 0 80px rgba(232,114,12,0.2)',
         }}>
+
+        {/* Background image */}
+        <div className="absolute inset-0 z-0"
+          style={{
+            backgroundImage: 'url(https://i.ibb.co/673v2N3h/Chat-GPT-Image-Jul-15-2026-06-25-18-PM.png)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }} />
+        <div className="absolute inset-0 z-0"
+          style={{ background: 'linear-gradient(160deg,rgba(6,12,45,0.88) 0%,rgba(5,10,35,0.82) 100%)' }} />
 
         {/* Gold corner glints */}
         {['-top-1 -left-1','-top-1 -right-1'].map((pos, i) => (
-          <div key={i} className={`absolute ${pos} w-10 h-10 rounded-full pointer-events-none`}
-            style={{ background: 'radial-gradient(circle, rgba(255,215,0,0.5), transparent 70%)' }} />
+          <div key={i} className={`absolute ${pos} w-14 h-14 rounded-full pointer-events-none z-10`}
+            style={{ background: 'radial-gradient(circle, rgba(255,215,0,0.6), transparent 70%)' }} />
         ))}
 
         {/* Header banner */}
-        <div className="relative px-8 pt-8 pb-6 text-center"
-          style={{ background: 'linear-gradient(160deg, rgba(232,114,12,0.22), rgba(212,175,55,0.07) 60%, transparent)' }}>
+        <div className="relative z-10 px-6 sm:px-10 pt-8 pb-6 text-center"
+          style={{ background: 'linear-gradient(160deg, rgba(232,114,12,0.2), rgba(212,175,55,0.06) 60%, transparent)' }}>
           <button onClick={onClose}
-            className="absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors"
-            style={{ border: '1px solid rgba(255,255,255,0.12)' }}>
+            className="absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center text-white/70 hover:text-white transition-colors"
+            style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }}>
             <X className="w-4 h-4" />
           </button>
           <div className="flex justify-center mb-3">
-            <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl"
-              style={{ background: 'linear-gradient(135deg,#F97316,#E8720C)', boxShadow: '0 0 36px rgba(232,114,12,0.6)' }}>
+            <div className="w-16 h-16 rounded-full flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg,#F97316,#E8720C)', boxShadow: '0 0 40px rgba(232,114,12,0.7)' }}>
               <Heart className="w-7 h-7 text-white" fill="white" />
             </div>
           </div>
-          <h2 className="text-2xl font-black text-white tracking-tight">Drop a Well Wish</h2>
-          <p className="text-white/40 text-sm mt-1.5">Choose a graduate to send your congratulations to</p>
+          <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">Drop a Well Wish</h2>
+          <p className="text-white/45 text-sm mt-1.5">Choose a graduate to send your congratulations to</p>
         </div>
 
         {/* Search */}
-        <div className="px-8 -mt-1 mb-3 relative z-10">
+        <div className="relative z-10 px-6 sm:px-10 -mt-1 mb-3">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name…" autoFocus
-              className="w-full pl-11 pr-4 py-3.5 rounded-2xl text-sm text-white placeholder-white/30 outline-none transition-all focus:ring-2"
-              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(212,175,55,0.25)', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.3)' }} />
+              className="w-full pl-11 pr-4 py-3.5 rounded-2xl text-sm text-white placeholder-white/30 outline-none"
+              style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(8px)', border: '1px solid rgba(212,175,55,0.3)' }} />
           </div>
         </div>
 
         {/* List */}
-        <div className="flex-1 overflow-y-auto px-8 pb-8 pt-2 space-y-5">
+        <div className="relative z-10 flex-1 overflow-y-auto px-6 sm:px-10 pb-8 pt-2 space-y-5">
           {grouped.map(([yg, grads]) => (
             <div key={yg}>
-              <p className="text-[11px] font-black uppercase tracking-widest mb-2.5 px-1" style={{ color: 'rgba(212,175,55,0.7)' }}>{yg}</p>
-              <div className="grid sm:grid-cols-2 gap-2.5">
+              <p className="text-[11px] font-black uppercase tracking-widest mb-3 px-1" style={{ color: 'rgba(212,175,55,0.8)' }}>{yg}</p>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                 {grads.map(g => (
-                  <motion.button key={g.id} onClick={() => onPick(g)} whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}
-                    className="flex items-center gap-3.5 p-3.5 rounded-2xl text-left transition-colors group"
-                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <motion.button key={g.id} onClick={() => onPick(g)} whileHover={{ y: -2, scale: 1.01 }} whileTap={{ scale: 0.97 }}
+                    className="flex items-center gap-3 p-3.5 rounded-2xl text-left transition-colors group"
+                    style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)' }}>
                     <div className="rounded-full p-0.5 flex-shrink-0" style={{ background: 'linear-gradient(135deg,#F97316,#E8720C)' }}>
-                      <div className="rounded-full p-0.5" style={{ background: '#0a1440' }}>
+                      <div className="rounded-full p-0.5" style={{ background: 'rgba(5,10,35,0.9)' }}>
                         <Avatar name={g.name} photoUrl={g.photoUrl} size="sm" />
                       </div>
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-white text-sm font-bold group-hover:text-orange-200 transition-colors truncate">{g.name}</p>
-                      <p className="text-white/35 text-xs truncate">{g.subject}</p>
+                      <p className="text-white/40 text-xs truncate">{g.subject}</p>
                     </div>
-                    <Heart className="w-4 h-4 text-white/0 group-hover:text-orange-400/70 transition-colors flex-shrink-0" />
+                    <Heart className="w-4 h-4 text-white/0 group-hover:text-orange-400/80 transition-colors flex-shrink-0" />
                   </motion.button>
                 ))}
               </div>
