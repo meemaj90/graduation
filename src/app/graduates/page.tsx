@@ -65,20 +65,20 @@ function WishForm({ grad, onDone }: { grad: HofGraduate; onDone: () => void }) {
   return (
     <div className="space-y-3">
       <div>
-        <label className="text-xs font-bold text-white/50 uppercase tracking-wider">Your Name</label>
+        <label className="text-xs font-bold text-white uppercase tracking-wider">Your Name</label>
         <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Proud Parent, Mrs Johnson…"
-          className="w-full mt-1 px-3 py-2 rounded-xl text-sm text-white placeholder-white/30 outline-none"
-          style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)' }} />
+          className="w-full mt-1 px-3 py-2.5 rounded-xl text-sm text-white placeholder-white/40 outline-none"
+          style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.2)' }} />
       </div>
       <div>
-        <label className="text-xs font-bold text-white/50 uppercase tracking-wider">Your Wish</label>
+        <label className="text-xs font-bold text-white uppercase tracking-wider">Your Wish</label>
         <textarea value={msg} onChange={e => setMsg(e.target.value)} rows={3}
           placeholder={`Write a personal message for ${grad.name}…`}
-          className="w-full mt-1 px-3 py-2 rounded-xl text-sm text-white placeholder-white/30 outline-none resize-none"
-          style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)' }} />
+          className="w-full mt-1 px-3 py-2.5 rounded-xl text-sm text-white placeholder-white/40 outline-none resize-none"
+          style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.2)' }} />
       </div>
       <div>
-        <label className="text-xs font-bold text-white/50 uppercase tracking-wider">Add a Photo (optional)</label>
+        <label className="text-xs font-bold text-white uppercase tracking-wider">Add a Photo (optional)</label>
         <div className="mt-1 flex items-center gap-3">
           {photo && (
             <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0">
@@ -164,7 +164,7 @@ function measureLines(ctx: CanvasRenderingContext2D, text: string, maxW: number)
 }
 
 // ── Share card generator ──────────────────────────────────────────────────────
-async function downloadShareCard(grad: HofGraduate, wishes: { guestName: string; message: string }[]) {
+async function buildShareCard(grad: HofGraduate, wishes: { guestName: string; message: string }[]) {
   const W = 1080
   // We draw onto an oversized canvas, then crop to content at the end
   const MAX_H = 3000
@@ -347,18 +347,26 @@ async function downloadShareCard(grad: HofGraduate, wishes: { guestName: string;
   ctx.fillText('nextora.academy · Class of 2026', W / 2, y - 10)
   y += 16
 
-  // ── Crop canvas to content then export ──
+  // ── Crop canvas to content ──
   const finalH = y
   const cropped = document.createElement('canvas')
   cropped.width = W; cropped.height = finalH
-  const ctx2 = cropped.getContext('2d')!
-  ctx2.drawImage(canvas, 0, 0)
-  const url = cropped.toDataURL('image/png')
-  const a = document.createElement('a'); a.href = url
-  a.download = `${grad.name.replace(/\s+/g, '-')}-graduation-2026.png`; a.click()
+  cropped.getContext('2d')!.drawImage(canvas, 0, 0)
+  return { canvas: cropped, url: cropped.toDataURL('image/png') }
+}
 
+async function handleDownload(grad: HofGraduate, wishes: { guestName: string; message: string }[]) {
+  const result = await buildShareCard(grad, wishes)
+  if (!result) return
+  const a = document.createElement('a'); a.href = result.url
+  a.download = `${grad.name.replace(/\s+/g, '-')}-graduation-2026.png`; a.click()
+}
+
+async function handleShareNative(grad: HofGraduate, wishes: { guestName: string; message: string }[]) {
+  const result = await buildShareCard(grad, wishes)
+  if (!result) return
   try {
-    const blob = await (await fetch(url)).blob()
+    const blob = await (await fetch(result.url)).blob()
     const file = new File([blob], `${grad.name.replace(/\s+/g, '-')}-graduation.png`, { type: 'image/png' })
     if (navigator.canShare?.({ files: [file] })) {
       await navigator.share({
@@ -366,19 +374,31 @@ async function downloadShareCard(grad: HofGraduate, wishes: { guestName: string;
         text: `🎓 Congratulations to ${grad.name}! Class of 2026, Nextora Academy.`,
         files: [file],
       })
+    } else {
+      // Fallback: download if Web Share not available
+      const a = document.createElement('a'); a.href = result.url
+      a.download = `${grad.name.replace(/\s+/g, '-')}-graduation-2026.png`; a.click()
     }
-  } catch { /* download already triggered, share cancelled or unavailable */ }
+  } catch { /* cancelled */ }
 }
+
+// Keep old name as alias so existing callers still compile
+const downloadShareCard = handleDownload
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
 function GradModal({ grad, initialTab = 'about', onClose }: { grad: HofGraduate; initialTab?: 'about' | 'wishes'; onClose: () => void }) {
   const wishes = useHallStore(s => s.wishes[grad.id] ?? [])
   const [tab, setTab] = useState<'about' | 'wishes'>(initialTab)
+  const [downloading, setDownloading] = useState(false)
   const [sharing, setSharing] = useState(false)
 
-  const handleShare = async () => {
+  const onDownload = async () => {
+    setDownloading(true)
+    try { await handleDownload(grad, wishes) } finally { setDownloading(false) }
+  }
+  const onShare = async () => {
     setSharing(true)
-    try { await downloadShareCard(grad, wishes) } finally { setSharing(false) }
+    try { await handleShareNative(grad, wishes) } finally { setSharing(false) }
   }
 
   return (
@@ -420,14 +440,22 @@ function GradModal({ grad, initialTab = 'about', onClose }: { grad: HofGraduate;
           <p className="text-sm font-semibold mt-0.5" style={{ color: '#f97316' }}>{grad.level}</p>
           <p className="text-white/50 text-xs">{grad.subject}</p>
 
-          {/* Share / Download card */}
-          <button onClick={handleShare} disabled={sharing}
-            className="mt-5 flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-50 hover:scale-105 active:scale-95"
-            style={{ background: 'linear-gradient(135deg,#E8720C,#f97316)', color: '#0a1440', boxShadow: '0 4px 20px rgba(232,114,12,0.5)' }}>
-            <Share2 className="w-4 h-4" />
-            {sharing ? 'Generating…' : 'Share / Download Card'}
-          </button>
-          <p className="text-white/30 text-xs mt-2 px-2">Save as image - share on WhatsApp, Instagram & more</p>
+          {/* Download + Share buttons */}
+          <div className="mt-5 flex gap-2 w-full">
+            <button onClick={onDownload} disabled={downloading}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all disabled:opacity-50 hover:scale-105 active:scale-95"
+              style={{ background: 'linear-gradient(135deg,#E8720C,#f97316)', color: '#0a1440', boxShadow: '0 4px 16px rgba(232,114,12,0.45)' }}>
+              <Download className="w-3.5 h-3.5" />
+              {downloading ? 'Saving…' : 'Download'}
+            </button>
+            <button onClick={onShare} disabled={sharing}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all disabled:opacity-50 hover:scale-105 active:scale-95"
+              style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.25)', color: '#fff' }}>
+              <Share2 className="w-3.5 h-3.5" />
+              {sharing ? 'Sharing…' : 'Share'}
+            </button>
+          </div>
+          <p className="text-white/50 text-xs mt-2 px-2">WhatsApp · Instagram · any app</p>
         </div>
 
         {/* Content */}
@@ -493,11 +521,11 @@ function GradModal({ grad, initialTab = 'about', onClose }: { grad: HofGraduate;
                 <WishForm grad={grad} onDone={() => setTab('about')} />
                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 16 }}>
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs font-bold uppercase tracking-wider text-white/40">
+                    <p className="text-xs font-bold uppercase tracking-wider text-white/70">
                       {wishes.length > 0 ? `${wishes.length} wish${wishes.length !== 1 ? 'es' : ''} received` : 'No wishes yet'}
                     </p>
                     {wishes.length > 0 && (
-                      <button onClick={handleShare} disabled={sharing}
+                      <button onClick={onDownload} disabled={downloading}
                         className="flex items-center gap-1 text-xs font-semibold disabled:opacity-50 transition-colors"
                         style={{ color: '#E8720C' }}>
                         <Download className="w-3 h-3" />{sharing ? 'Saving…' : 'Save Card with Wishes'}
@@ -548,7 +576,7 @@ function WishPicker({ graduates, onPick, onClose }: { graduates: HofGraduate[]; 
         {/* Background image */}
         <div className="absolute inset-0 z-0"
           style={{
-            backgroundImage: 'url(https://i.ibb.co/673v2N3h/Chat-GPT-Image-Jul-15-2026-06-25-18-PM.png)',
+            backgroundImage: 'url(https://i.ibb.co/HLp7Qg2R/Chat-GPT-Image-Jul-15-2026-06-39-33-PM.png)',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
           }} />
@@ -632,7 +660,7 @@ export default function GraduatesPage() {
 
   const pickGraduate = (g: HofGraduate) => {
     setPicking(false)
-    setSelectedTab('wishes')
+    setSelectedTab('about')
     setSelected(g)
   }
 
