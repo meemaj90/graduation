@@ -113,7 +113,7 @@ function WishesList({ gradId }: { gradId: string }) {
     <div className="space-y-2">
       {shown.map(w => (
         <div key={w.id} className="flex gap-2.5 items-start p-3 rounded-xl"
-          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+          style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.1)' }}>
           {w.photoUrl
             ? <img src={w.photoUrl} alt={w.guestName} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />  // eslint-disable-line @next/next/no-img-element
             : <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ background: 'rgba(212,175,55,0.25)' }}>{w.guestName[0]}</div>
@@ -354,49 +354,60 @@ function GradModal({ grad, initialTab = 'about', onClose }: { grad: HofGraduate;
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(16px)' }}
+      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)' }}
       onClick={onClose}>
       <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9 }}
         onClick={e => e.stopPropagation()}
-        className="w-full max-w-4xl max-h-[88vh] rounded-3xl overflow-hidden shadow-2xl grid md:grid-cols-[280px_1fr]"
-        style={{ background: 'linear-gradient(160deg,#0a1440,#0f2060)', border: '2px solid rgba(212,175,55,0.6)' }}>
+        className="w-full max-w-4xl max-h-[88vh] rounded-3xl overflow-hidden shadow-2xl grid md:grid-cols-[280px_1fr] relative"
+        style={{ border: '2px solid rgba(212,175,55,0.6)', boxShadow: '0 0 60px rgba(232,114,12,0.25), 0 32px 80px rgba(0,0,0,0.8)' }}>
+
+        {/* Background image fills entire modal */}
+        <div className="absolute inset-0 z-0"
+          style={{
+            backgroundImage: 'url(https://i.ibb.co/Gg7mm9t/Chat-GPT-Image-Jul-15-2026-06-14-24-PM.png)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }} />
+        {/* Dark overlay so text stays readable */}
+        <div className="absolute inset-0 z-0" style={{ background: 'linear-gradient(160deg,rgba(8,14,50,0.82) 0%,rgba(5,10,35,0.75) 100%)' }} />
 
         <button onClick={onClose}
-          className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors"
-          style={{ border: '1px solid rgba(255,255,255,0.12)' }}>
+          className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full flex items-center justify-center text-white/70 hover:text-white transition-colors"
+          style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)' }}>
           <X className="w-4 h-4" />
         </button>
 
         {/* Profile sidebar */}
-        <div className="relative px-6 py-8 text-center flex flex-col items-center justify-center md:border-r"
-          style={{ background: 'linear-gradient(160deg,rgba(212,175,55,0.14),transparent)', borderColor: 'rgba(255,255,255,0.08)' }}>
-          <div className="rounded-full p-1 mb-4" style={{ background: 'linear-gradient(135deg,#E8720C,#F97316)', boxShadow: '0 0 28px rgba(212,175,55,0.6)' }}>
-            <div className="rounded-full p-0.5 bg-[#0a1440]">
+        <div className="relative z-10 px-6 py-8 text-center flex flex-col items-center justify-center md:border-r"
+          style={{ borderColor: 'rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.15)' }}>
+          <div className="rounded-full p-1 mb-4" style={{ background: 'linear-gradient(135deg,#E8720C,#F97316)', boxShadow: '0 0 40px rgba(232,114,12,0.7)' }}>
+            <div className="rounded-full p-0.5" style={{ background: 'rgba(5,10,35,0.8)' }}>
               <Avatar name={grad.name} photoUrl={grad.photoUrl} size="lg" />
             </div>
           </div>
           <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: '#E8720C' }}>⭐ Class of 2026 ⭐</p>
-          <h2 className="text-2xl font-black text-white">{grad.name}</h2>
+          <h2 className="text-2xl font-black text-white drop-shadow-lg">{grad.name}</h2>
           <p className="text-sm font-semibold mt-0.5" style={{ color: '#f97316' }}>{grad.level}</p>
-          <p className="text-white/40 text-xs">{grad.subject}</p>
+          <p className="text-white/50 text-xs">{grad.subject}</p>
 
           {/* Share / Download card */}
           <button onClick={handleShare} disabled={sharing}
-            className="mt-5 flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-50 hover:scale-105"
-            style={{ background: 'linear-gradient(135deg,#E8720C,#f97316)', color: '#0a1440' }}>
+            className="mt-5 flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-50 hover:scale-105 active:scale-95"
+            style={{ background: 'linear-gradient(135deg,#E8720C,#f97316)', color: '#0a1440', boxShadow: '0 4px 20px rgba(232,114,12,0.5)' }}>
             <Share2 className="w-4 h-4" />
             {sharing ? 'Generating…' : 'Share / Download Card'}
           </button>
-          <p className="text-white/25 text-xs mt-2 px-2">Save as image · share on WhatsApp, Instagram & more</p>
+          <p className="text-white/30 text-xs mt-2 px-2">Save as image - share on WhatsApp, Instagram & more</p>
         </div>
 
         {/* Content */}
-        <div className="flex flex-col min-h-0">
-          <div className="flex mx-6 mt-6 rounded-xl overflow-hidden mb-4 flex-shrink-0" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+        <div className="relative z-10 flex flex-col min-h-0">
+          <div className="flex mx-6 mt-6 rounded-xl overflow-hidden mb-4 flex-shrink-0"
+            style={{ border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)' }}>
             {(['about','wishes'] as const).map(t => (
               <button key={t} onClick={() => setTab(t)}
                 className={`flex-1 py-2.5 text-xs font-bold capitalize transition-all ${tab === t ? 'text-white' : 'text-white/40'}`}
-                style={tab === t ? { background: 'rgba(255,255,255,0.1)' } : {}}>
+                style={tab === t ? { background: 'rgba(255,255,255,0.15)' } : {}}>
                 {t === 'wishes' ? `💌 Wishes (${wishes.length})` : '📖 About'}
               </button>
             ))}
@@ -408,9 +419,9 @@ function GradModal({ grad, initialTab = 'about', onClose }: { grad: HofGraduate;
                 {(() => {
                   const secondary = grad.level === 'Year 6 → Year 7' || grad.level === 'Year 9 → Year 10'
                   const InfoCard = ({ label, val, col, bg, border }: { label: string; val: string; col: string; bg?: string; border?: string }) => (
-                    <div className="p-4 rounded-2xl" style={{ background: bg ?? 'rgba(255,255,255,0.04)', border: `1px solid ${border ?? 'rgba(255,255,255,0.08)'}` }}>
+                    <div className="p-4 rounded-2xl" style={{ background: bg ?? 'rgba(0,0,0,0.35)', backdropFilter: 'blur(12px)', border: `1px solid ${border ?? 'rgba(255,255,255,0.1)'}` }}>
                       <p className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: col }}>{label}</p>
-                      <p className="text-white/80 text-sm italic">"{val}"</p>
+                      <p className="text-white/85 text-sm italic">"{val}"</p>
                     </div>
                   )
                   return secondary ? (
@@ -420,9 +431,9 @@ function GradModal({ grad, initialTab = 'about', onClose }: { grad: HofGraduate;
                       {grad.memory && <InfoCard label="💛 A Memorable Experience" val={grad.memory} col="#60a5fa" />}
                       {grad.dream && <InfoCard label="🚀 Dream Career / Future Goal" val={grad.dream} col="#f97316" />}
                       {grad.quote && (
-                        <div className="p-4 rounded-2xl" style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.3)' }}>
+                        <div className="p-4 rounded-2xl" style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(12px)', border: '1px solid rgba(124,58,237,0.4)' }}>
                           <p className="text-xs font-bold uppercase tracking-wider mb-1.5 text-purple-300">💬 Favourite Quote</p>
-                          <p className="text-white/80 text-lg italic font-serif">"{grad.quote}"</p>
+                          <p className="text-white/85 text-lg italic font-serif">"{grad.quote}"</p>
                         </div>
                       )}
                     </>
@@ -433,17 +444,17 @@ function GradModal({ grad, initialTab = 'about', onClose }: { grad: HofGraduate;
                     </>
                   )
                 })()}
-                <div className="p-4 rounded-2xl" style={{ background: 'rgba(37,99,235,0.1)', border: '1px solid rgba(37,99,235,0.25)' }}>
+                <div className="p-4 rounded-2xl" style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(12px)', border: '1px solid rgba(59,130,246,0.25)' }}>
                   <p className="text-xs font-bold uppercase tracking-wider mb-1.5 text-blue-300">📝 Teacher&apos;s Message</p>
-                  <p className="text-white/70 text-sm italic">"{grad.teacherMsg}"</p>
+                  <p className="text-white/85 text-sm italic">"{grad.teacherMsg}"</p>
                 </div>
-                <div className="p-4 rounded-2xl" style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.25)' }}>
+                <div className="p-4 rounded-2xl" style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(12px)', border: '1px solid rgba(212,175,55,0.3)' }}>
                   <p className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: '#E8720C' }}>❤️ Message from Parent / Guardian</p>
-                  <p className="text-white/70 text-sm italic">"{grad.parentMsg}"</p>
+                  <p className="text-white/85 text-sm italic">"{grad.parentMsg}"</p>
                 </div>
                 <button onClick={() => setTab('wishes')}
                   className="w-full py-3 rounded-2xl flex items-center justify-center gap-2 text-sm font-bold"
-                  style={{ background: 'linear-gradient(135deg,#E8720C,#f97316)', color: '#0a1440' }}>
+                  style={{ background: 'linear-gradient(135deg,#E8720C,#f97316)', color: '#0a1440', boxShadow: '0 4px 20px rgba(232,114,12,0.5)' }}>
                   <Heart className="w-4 h-4" fill="currentColor" /> Drop a Well Wish for {grad.name.split(' ')[0]}
                 </button>
               </div>
