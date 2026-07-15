@@ -249,7 +249,12 @@ function HofField({ label, val, onChange, placeholder }: { label: string; val: s
   return (
     <div>
       <label className="text-xs text-white/40 uppercase tracking-wider">{label}</label>
-      <input value={val} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+      <input
+        key={val === '' ? 'empty' : undefined}
+        defaultValue={val}
+        onBlur={e => { if (e.target.value !== val) onChange(e.target.value) }}
+        onChange={() => {}}
+        placeholder={placeholder}
         className="w-full mt-0.5 px-3 py-2 rounded-xl text-sm text-white outline-none placeholder-white/20"
         style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }} />
     </div>

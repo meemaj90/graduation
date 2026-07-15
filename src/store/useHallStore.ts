@@ -85,6 +85,10 @@ export const useHallStore = create<HallState>()(
           },
         })),
     }),
-    { name: 'hall-store-v5' }
+    {
+      name: 'hall-store-v4',
+      version: 1,
+      migrate: (s: any) => s,
+    }
   )
 )

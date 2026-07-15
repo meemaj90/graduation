@@ -133,103 +133,7 @@ function WishesList({ gradId }: { gradId: string }) {
   )
 }
 
-// ── Share card generator ──────────────────────────────────────────────────────
-async function downloadShareCard(grad: HofGraduate, wishes: { guestName: string; message: string }[]) {
-  const W = 1080, H = 1350
-  const canvas = document.createElement('canvas')
-  canvas.width = W; canvas.height = H
-  const ctx = canvas.getContext('2d')!
-
-  // Background
-  const bg = ctx.createLinearGradient(0, 0, W, H)
-  bg.addColorStop(0, '#0d1f5c'); bg.addColorStop(1, '#081030')
-  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H)
-
-  // Orange stripe top
-  ctx.fillStyle = '#E8720C'; ctx.fillRect(0, 0, W, 12)
-
-  // School name
-  ctx.fillStyle = '#E8720C'; ctx.font = 'bold 36px Georgia, serif'
-  ctx.textAlign = 'center'; ctx.fillText('NEXTORA ACADEMY · CLASS OF 2026', W / 2, 70)
-
-  // Photo circle
-  const cx = W / 2, cy = 260, r = 160
-  ctx.save()
-  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.clip()
-  if (grad.photoUrl && !grad.photoUrl.startsWith('https://api.dicebear')) {
-    try {
-      const img = await new Promise<HTMLImageElement>((res, rej) => {
-        const i = new Image(); i.crossOrigin = 'anonymous'
-        i.onload = () => res(i); i.onerror = rej; i.src = grad.photoUrl!
-      })
-      ctx.drawImage(img, cx - r, cy - r, r * 2, r * 2)
-    } catch { ctx.fillStyle = '#1a3a8f'; ctx.fillRect(cx - r, cy - r, r * 2, r * 2) }
-  } else {
-    ctx.fillStyle = '#1a3a8f'; ctx.fillRect(cx - r, cy - r, r * 2, r * 2)
-    ctx.restore(); ctx.save()
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 100px Georgia'
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
-    ctx.fillText(grad.name.split(' ').map(n => n[0]).join('').slice(0,2), cx, cy)
-  }
-  ctx.restore()
-
-  // Ring around photo
-  ctx.strokeStyle = '#E8720C'; ctx.lineWidth = 8
-  ctx.beginPath(); ctx.arc(cx, cy, r + 8, 0, Math.PI * 2); ctx.stroke()
-
-  // Name + level
-  ctx.textBaseline = 'alphabetic'
-  ctx.fillStyle = '#ffffff'; ctx.font = 'bold 72px Georgia, serif'
-  ctx.textAlign = 'center'; ctx.fillText(grad.name, W / 2, 490)
-  ctx.fillStyle = '#f97316'; ctx.font = '36px Georgia, serif'
-  ctx.fillText(grad.level, W / 2, 540)
-  ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = '30px Arial, sans-serif'
-  ctx.fillText(`Favourite Subject: ${grad.subject}`, W / 2, 585)
-
-  const drawCard = (title: string, text: string, y: number, color: string) => {
-    ctx.fillStyle = 'rgba(255,255,255,0.05)'
-    roundRect(ctx, 60, y, W - 120, 140, 20); ctx.fill()
-    ctx.fillStyle = color; ctx.font = 'bold 26px Arial, sans-serif'
-    ctx.textAlign = 'left'; ctx.fillText(title, 90, y + 38)
-    ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.font = 'italic 28px Georgia, serif'
-    wrapText(ctx, `"${text}"`, 90, y + 78, W - 180, 34)
-  }
-
-  drawCard('🌟 I want to become...', grad.dream, 615, '#E8720C')
-  drawCard('💛 My favourite memory', grad.memory, 775, '#60a5fa')
-
-  // Wishes strip
-  if (wishes.length > 0) {
-    ctx.fillStyle = 'rgba(232,114,12,0.12)'
-    roundRect(ctx, 60, 935, W - 120, 330, 20); ctx.fill()
-    ctx.fillStyle = '#E8720C'; ctx.font = 'bold 28px Arial'
-    ctx.textAlign = 'center'; ctx.fillText(`💌 ${wishes.length} Well Wish${wishes.length !== 1 ? 'es' : ''}`, W / 2, 975)
-    const shown = wishes.slice(0, 3)
-    shown.forEach((w, i) => {
-      ctx.fillStyle = '#fff'; ctx.font = 'bold 24px Arial'
-      ctx.textAlign = 'left'; ctx.fillText(w.guestName, 90, 1015 + i * 82)
-      ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.font = '22px Arial'
-      wrapText(ctx, w.message, 90, 1042 + i * 82, W - 180, 26)
-    })
-  }
-
-  // Footer
-  ctx.fillStyle = '#E8720C'; ctx.fillRect(0, H - 12, W, 12)
-
-  const url = canvas.toDataURL('image/png')
-  const a = document.createElement('a'); a.href = url
-  a.download = `${grad.name.replace(/\s+/g,'-')}-graduation-2026.png`; a.click()
-
-  // Also try Web Share API for mobile (WhatsApp/Instagram etc.)
-  try {
-    const blob = await (await fetch(url)).blob()
-    const file = new File([blob], `${grad.name}-graduation.png`, { type: 'image/png' })
-    if (navigator.canShare?.({ files: [file] })) {
-      await navigator.share({ title: `${grad.name} - Nextora Academy 2026`, text: `🎓 Congratulations to ${grad.name}! Class of 2026, Nextora Academy.`, files: [file] })
-    }
-  } catch { /* share not available or cancelled — download already triggered */ }
-}
-
+// ── Canvas helpers ────────────────────────────────────────────────────────────
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath(); ctx.moveTo(x + r, y)
   ctx.lineTo(x + w - r, y); ctx.arcTo(x + w, y, x + w, y + r, r)
@@ -238,15 +142,202 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
   ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r); ctx.closePath()
 }
 
-function wrapText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxW: number, lineH: number) {
-  const words = text.split(' '); let line = ''
+function wrapText(ctx: CanvasRenderingContext2D, text: string, x: number, startY: number, maxW: number, lineH: number): number {
+  const words = text.split(' '); let line = ''; let lineNum = 0
   for (const word of words) {
     const test = line ? `${line} ${word}` : word
     if (ctx.measureText(test).width > maxW && line) {
-      ctx.fillText(line, x, y); y += lineH; line = word
+      ctx.fillText(line, x, startY + lineNum * lineH); lineNum++; line = word
     } else { line = test }
   }
-  if (line) ctx.fillText(line, x, y)
+  if (line) { ctx.fillText(line, x, startY + lineNum * lineH); lineNum++ }
+  return lineNum
+}
+
+function measureLines(ctx: CanvasRenderingContext2D, text: string, maxW: number): number {
+  const words = text.split(' '); let line = ''; let lines = 1
+  for (const word of words) {
+    const test = line ? `${line} ${word}` : word
+    if (ctx.measureText(test).width > maxW && line) { lines++; line = word } else { line = test }
+  }
+  return lines
+}
+
+// ── Share card generator ──────────────────────────────────────────────────────
+async function downloadShareCard(grad: HofGraduate, wishes: { guestName: string; message: string }[]) {
+  const W = 1080, H = 1920
+  const MARGIN = 60, INNER = W - MARGIN * 2
+  const canvas = document.createElement('canvas')
+  canvas.width = W; canvas.height = H
+  const ctx = canvas.getContext('2d')!
+  const isSecondary = grad.level === 'Year 6 → Year 7' || grad.level === 'Year 9 → Year 10'
+
+  // ── Background ──
+  const bg = ctx.createLinearGradient(0, 0, 0, H)
+  bg.addColorStop(0, '#0d1f5c'); bg.addColorStop(0.6, '#0a1440'); bg.addColorStop(1, '#060c28')
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H)
+
+  // subtle star dots
+  ctx.fillStyle = 'rgba(255,255,255,0.04)'
+  for (let i = 0; i < 60; i++) {
+    const px = (grad.name.charCodeAt(i % grad.name.length) * 139 + i * 79) % W
+    const py = (grad.name.charCodeAt((i + 1) % grad.name.length) * 163 + i * 61) % H
+    ctx.beginPath(); ctx.arc(px, py, 1.5 + (i % 3), 0, Math.PI * 2); ctx.fill()
+  }
+
+  // ── Top stripe ──
+  const stripe = ctx.createLinearGradient(0, 0, W, 0)
+  stripe.addColorStop(0, '#E8720C'); stripe.addColorStop(1, '#f97316')
+  ctx.fillStyle = stripe; ctx.fillRect(0, 0, W, 16)
+
+  // ── Header ──
+  ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fillRect(0, 16, W, 94)
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'
+  ctx.fillStyle = '#E8720C'; ctx.font = 'bold 34px Arial, sans-serif'
+  ctx.fillText('NEXTORA ACADEMY', W / 2, 62)
+  ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.font = '22px Arial'
+  ctx.fillText('GRADUATION CEREMONY · CLASS OF 2026', W / 2, 95)
+
+  // ── Photo ──
+  const cx = W / 2, cy = 250, r = 115
+  ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.clip()
+  let photoOk = false
+  if (grad.photoUrl && !grad.photoUrl.startsWith('https://api.dicebear')) {
+    try {
+      const img = await new Promise<HTMLImageElement>((res, rej) => {
+        const i = new Image(); i.crossOrigin = 'anonymous'
+        i.onload = () => res(i); i.onerror = rej; i.src = grad.photoUrl!
+      })
+      ctx.drawImage(img, cx - r, cy - r, r * 2, r * 2); photoOk = true
+    } catch { /* fall through to initials */ }
+  }
+  if (!photoOk) {
+    ctx.fillStyle = '#1a3a8f'; ctx.fillRect(cx - r, cy - r, r * 2, r * 2)
+    ctx.restore(); ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.clip()
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 80px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+    ctx.fillText(grad.name.split(' ').map(n => n[0]).join('').slice(0, 2), cx, cy)
+  }
+  ctx.restore()
+  // Ring
+  ctx.strokeStyle = '#E8720C'; ctx.lineWidth = 10
+  ctx.beginPath(); ctx.arc(cx, cy, r + 10, 0, Math.PI * 2); ctx.stroke()
+  ctx.strokeStyle = 'rgba(212,175,55,0.35)'; ctx.lineWidth = 4
+  ctx.beginPath(); ctx.arc(cx, cy, r + 22, 0, Math.PI * 2); ctx.stroke()
+
+  // ── Name / level ──
+  ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'center'
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 60px Arial'
+  ctx.fillText(grad.name, W / 2, 420)
+  ctx.fillStyle = '#f97316'; ctx.font = 'bold 28px Arial'
+  ctx.fillText(grad.level, W / 2, 460)
+  if (grad.subject) {
+    ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.font = '24px Arial'
+    ctx.fillText(isSecondary ? `⭐ Favourite Subject: ${grad.subject}` : `📚 ${grad.subject}`, W / 2, 493)
+  }
+
+  // divider
+  ctx.strokeStyle = 'rgba(232,114,12,0.3)'; ctx.lineWidth = 2
+  ctx.beginPath(); ctx.moveTo(MARGIN, 514); ctx.lineTo(W - MARGIN, 514); ctx.stroke()
+
+  // ── Info cards ──
+  let y = 530
+
+  const drawCard = (icon: string, title: string, text: string, color: string, bgAlpha = 0.04) => {
+    if (!text || y > H - 160) return
+    ctx.font = 'italic 24px Georgia, serif'
+    const lines = measureLines(ctx, `"${text}"`, INNER - 30)
+    const cardH = 50 + lines * 30 + 20
+    ctx.fillStyle = `rgba(255,255,255,${bgAlpha})`
+    roundRect(ctx, MARGIN, y, INNER, cardH, 18); ctx.fill()
+    ctx.fillStyle = color + '55'; ctx.lineWidth = 1.5
+    roundRect(ctx, MARGIN, y, INNER, cardH, 18); ctx.stroke()
+    // color bar
+    ctx.fillStyle = color; ctx.fillRect(MARGIN, y + 10, 6, cardH - 20)
+    ctx.textAlign = 'left'
+    ctx.fillStyle = color; ctx.font = 'bold 22px Arial'
+    ctx.fillText(`${icon} ${title}`, MARGIN + 20, y + 34)
+    ctx.fillStyle = 'rgba(255,255,255,0.78)'; ctx.font = 'italic 24px Georgia, serif'
+    wrapText(ctx, `"${text}"`, MARGIN + 20, y + 62, INNER - 30, 30)
+    y += cardH + 10
+  }
+
+  if (isSecondary) {
+    drawCard('🏆', 'Achievement Most Proud Of', grad.achievement ?? '', '#22c55e')
+    drawCard('💛', 'A Memorable Experience', grad.memory, '#60a5fa')
+    drawCard('🚀', 'Dream Career & Future Goal', grad.dream, '#f97316')
+    if (grad.quote && y < H - 160) {
+      ctx.font = 'italic 26px Georgia, serif'
+      const qLines = measureLines(ctx, `"${grad.quote}"`, INNER - 30)
+      const qH = 50 + qLines * 32 + 20
+      ctx.fillStyle = 'rgba(124,58,237,0.12)'; roundRect(ctx, MARGIN, y, INNER, qH, 18); ctx.fill()
+      ctx.strokeStyle = 'rgba(124,58,237,0.4)'; ctx.lineWidth = 1.5
+      roundRect(ctx, MARGIN, y, INNER, qH, 18); ctx.stroke()
+      ctx.fillStyle = '#a78bfa'; ctx.fillRect(MARGIN, y + 10, 6, qH - 20)
+      ctx.textAlign = 'left'; ctx.fillStyle = '#a78bfa'; ctx.font = 'bold 22px Arial'
+      ctx.fillText('💬 Favourite Quote', MARGIN + 20, y + 34)
+      ctx.fillStyle = 'rgba(255,255,255,0.82)'; ctx.font = 'italic 26px Georgia'
+      wrapText(ctx, `"${grad.quote}"`, MARGIN + 20, y + 66, INNER - 30, 32)
+      y += qH + 10
+    }
+  } else {
+    drawCard('🌟', 'What I Want to Become', grad.dream, '#E8720C')
+    drawCard('💛', 'My Favourite Memory in Class', grad.memory, '#60a5fa')
+  }
+
+  drawCard('📝', "Teacher's Message", grad.teacherMsg, '#3b82f6')
+  drawCard('❤️', 'Message from Parent / Guardian', grad.parentMsg, '#ec4899', 0.05)
+
+  // ── Wishes ──
+  if (wishes.length > 0 && y < H - 200) {
+    y += 10
+    ctx.strokeStyle = 'rgba(232,114,12,0.25)'; ctx.lineWidth = 2
+    ctx.beginPath(); ctx.moveTo(MARGIN, y); ctx.lineTo(W - MARGIN, y); ctx.stroke()
+    y += 28
+    ctx.textAlign = 'center'; ctx.fillStyle = '#E8720C'; ctx.font = 'bold 28px Arial'
+    ctx.fillText(`💌 Well Wishes (${wishes.length})`, W / 2, y)
+    y += 32
+
+    let wishCount = 0
+    for (const w of wishes) {
+      if (y > H - 120) break
+      ctx.font = '22px Arial'
+      const msgLines = measureLines(ctx, w.message, INNER - 30)
+      const wH = 44 + msgLines * 26 + 14
+      ctx.fillStyle = 'rgba(255,255,255,0.03)'
+      roundRect(ctx, MARGIN, y, INNER, wH, 14); ctx.fill()
+      ctx.textAlign = 'left'; ctx.fillStyle = '#fff'; ctx.font = 'bold 22px Arial'
+      ctx.fillText(w.guestName, MARGIN + 20, y + 28)
+      ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.font = '21px Arial'
+      wrapText(ctx, w.message, MARGIN + 20, y + 54, INNER - 30, 26)
+      y += wH + 8; wishCount++
+    }
+    if (wishCount < wishes.length) {
+      ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.font = '22px Arial'; ctx.textAlign = 'center'
+      ctx.fillText(`+ ${wishes.length - wishCount} more wishes`, W / 2, y + 24)
+    }
+  }
+
+  // ── Footer stripe ──
+  ctx.fillStyle = stripe; ctx.fillRect(0, H - 16, W, 16)
+  ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.font = '20px Arial'; ctx.textAlign = 'center'
+  ctx.fillText('nextora.academy · Class of 2026', W / 2, H - 26)
+
+  // ── Export ──
+  const url = canvas.toDataURL('image/png')
+  const a = document.createElement('a'); a.href = url
+  a.download = `${grad.name.replace(/\s+/g, '-')}-graduation-2026.png`; a.click()
+
+  try {
+    const blob = await (await fetch(url)).blob()
+    const file = new File([blob], `${grad.name}-graduation.png`, { type: 'image/png' })
+    if (navigator.canShare?.({ files: [file] })) {
+      await navigator.share({
+        title: `${grad.name} - Nextora Academy 2026`,
+        text: `🎓 Congratulations to ${grad.name}! Class of 2026, Nextora Academy.`,
+        files: [file],
+      })
+    }
+  } catch { /* download already triggered, share cancelled or unavailable */ }
 }
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
