@@ -235,6 +235,108 @@ function VenueTab() {
   )
 }
 
+// ── Hall of Fame shared helpers (module-level to avoid SWC nested-component issues) ──
+
+type GradSetData = (fn: (d: Partial<HofGraduate>) => Partial<HofGraduate>) => void
+
+const HOF_LEVELS = ['UKG → Year 1','Year 6 → Year 7','Year 9 → Year 10'] as const
+
+function isSecondary(level?: string) {
+  return level === 'Year 6 → Year 7' || level === 'Year 9 → Year 10'
+}
+
+function HofField({ label, val, onChange, placeholder }: { label: string; val: string; onChange: (v: string) => void; placeholder?: string }) {
+  return (
+    <div>
+      <label className="text-xs text-white/40 uppercase tracking-wider">{label}</label>
+      <input value={val} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+        className="w-full mt-0.5 px-3 py-2 rounded-xl text-sm text-white outline-none placeholder-white/20"
+        style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }} />
+    </div>
+  )
+}
+
+function PhotoUpload({ val, onChange }: { val: string | null; onChange: (v: string | null) => void }) {
+  const ref = useRef(null as HTMLInputElement | null)
+  const pick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (!file) return
+    const reader = new FileReader()
+    reader.onload = ev => onChange(ev.target?.result as string)
+    reader.readAsDataURL(file)
+  }
+  return (
+    <div>
+      <label className="text-xs text-white/40 uppercase tracking-wider">Child's Photo</label>
+      <div className="mt-0.5 flex items-center gap-2">
+        {val && <img src={val} alt="preview" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />}
+        <button onClick={() => ref.current?.click()}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-white/60 hover:text-white transition-colors"
+          style={{ border: '1px dashed rgba(255,255,255,0.2)' }}>
+          <Camera className="w-3.5 h-3.5" />{val ? 'Change Photo' : 'Upload Photo'}
+        </button>
+        {val && <button onClick={() => onChange(null)} className="text-xs text-red-400/60 hover:text-red-400">Remove</button>}
+        <input ref={ref} type="file" accept="image/*" onChange={pick} className="hidden" />
+      </div>
+    </div>
+  )
+}
+
+function GradForm({ data, setData }: { data: Partial<HofGraduate>; setData: GradSetData }) {
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <HofField label="Full Name *" val={data.name ?? ''} onChange={v => setData(d => ({ ...d, name: v }))} />
+        <div>
+          <label className="text-xs text-white/40 uppercase tracking-wider">Year Level *</label>
+          <select value={data.level ?? ''} onChange={e => setData(d => ({ ...d, level: e.target.value as HofGraduate['level'] }))}
+            className="w-full mt-0.5 px-3 py-2 rounded-xl text-sm text-white outline-none"
+            style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }}>
+            <option value="">Select level</option>
+            {HOF_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <PhotoUpload val={data.photoUrl ?? null} onChange={v => setData(d => ({ ...d, photoUrl: v }))} />
+
+      {isSecondary(data.level) ? (
+        <>
+          <HofField label="Favourite Subject This Year"
+            val={data.subject ?? ''} onChange={v => setData(d => ({ ...d, subject: v }))}
+            placeholder="e.g. Mathematics, English…" />
+          <HofField label="Achievement Most Proud of This Year"
+            val={data.achievement ?? ''} onChange={v => setData(d => ({ ...d, achievement: v }))}
+            placeholder="e.g. Winning the science fair…" />
+          <HofField label="One Memorable Experience This Year"
+            val={data.memory ?? ''} onChange={v => setData(d => ({ ...d, memory: v }))}
+            placeholder="e.g. Our class trip to…" />
+          <HofField label="Dream Career / Future Goal"
+            val={data.dream ?? ''} onChange={v => setData(d => ({ ...d, dream: v }))}
+            placeholder="e.g. To become an engineer and build…" />
+          <HofField label="Favourite Quote"
+            val={data.quote ?? ''} onChange={v => setData(d => ({ ...d, quote: v }))}
+            placeholder={'e.g. “Be the change you wish to see”'} />
+        </>
+      ) : (
+        <>
+          <HofField label="Favourite Subject"
+            val={data.subject ?? ''} onChange={v => setData(d => ({ ...d, subject: v }))}
+            placeholder="e.g. Reading, Maths, Art…" />
+          <HofField label="What Would They Like to Become?"
+            val={data.dream ?? ''} onChange={v => setData(d => ({ ...d, dream: v }))}
+            placeholder="e.g. A doctor who helps people!" />
+          <HofField label="Child's Favourite Memory in Class"
+            val={data.memory ?? ''} onChange={v => setData(d => ({ ...d, memory: v }))}
+            placeholder="e.g. The day we made a volcano in science…" />
+        </>
+      )}
+
+      <HofField label="Teacher's Message" val={data.teacherMsg ?? ''} onChange={v => setData(d => ({ ...d, teacherMsg: v }))} />
+      <HofField label="Message from Parent / Guardian" val={data.parentMsg ?? ''} onChange={v => setData(d => ({ ...d, parentMsg: v }))} />
+    </div>
+  )
+}
+
 // ── Hall of Fame Tab ──────────────────────────────────────────────────────────
 function HallTab() {
   const { graduates, addGraduate, updateGraduate, removeGraduate } = useHallStore()
@@ -260,65 +362,6 @@ function HallTab() {
     })
     setAdding(false); setNewData({})
   }
-
-  const LEVELS = ['UKG → Year 1','Year 6 → Year 7','Year 9 → Year 10'] as const
-
-  const Field = ({ label, val, onChange, placeholder }: { label: string; val: string; onChange: (v: string) => void; placeholder?: string }) => (
-    <div>
-      <label className="text-xs text-white/40 uppercase tracking-wider">{label}</label>
-      <input value={val} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-        className="w-full mt-0.5 px-3 py-2 rounded-xl text-sm text-white outline-none placeholder-white/20"
-        style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }} />
-    </div>
-  )
-
-  const PhotoUpload = ({ val, onChange }: { val: string | null; onChange: (v: string | null) => void }) => {
-    const ref = useRef<HTMLInputElement>(null)
-    const pick = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0]; if (!file) return
-      const reader = new FileReader()
-      reader.onload = ev => onChange(ev.target?.result as string)
-      reader.readAsDataURL(file)
-    }
-    return (
-      <div>
-        <label className="text-xs text-white/40 uppercase tracking-wider">Child's Photo</label>
-        <div className="mt-0.5 flex items-center gap-2">
-          {val && <img src={val} alt="preview" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />}
-          <button onClick={() => ref.current?.click()}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-white/60 hover:text-white transition-colors"
-            style={{ border: '1px dashed rgba(255,255,255,0.2)' }}>
-            <Camera className="w-3.5 h-3.5" />{val ? 'Change Photo' : 'Upload Photo'}
-          </button>
-          {val && <button onClick={() => onChange(null)} className="text-xs text-red-400/60 hover:text-red-400">Remove</button>}
-          <input ref={ref} type="file" accept="image/*" onChange={pick} className="hidden" />
-        </div>
-      </div>
-    )
-  }
-
-  const GradForm = ({ data, setData }: { data: Partial<HofGraduate>; setData: (fn: (d: Partial<HofGraduate>) => Partial<HofGraduate>) => void }) => (
-    <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Full Name *" val={data.name ?? ''} onChange={v => setData(d => ({ ...d, name: v }))} />
-        <div>
-          <label className="text-xs text-white/40 uppercase tracking-wider">Year Level *</label>
-          <select value={data.level ?? ''} onChange={e => setData(d => ({ ...d, level: e.target.value as HofGraduate['level'] }))}
-            className="w-full mt-0.5 px-3 py-2 rounded-xl text-sm text-white outline-none"
-            style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }}>
-            <option value="">Select level</option>
-            {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
-          </select>
-        </div>
-        <Field label="Favourite Subject" val={data.subject ?? ''} onChange={v => setData(d => ({ ...d, subject: v }))} placeholder="e.g. Mathematics, Art…" />
-        <Field label="What Would They Like to Become?" val={data.dream ?? ''} onChange={v => setData(d => ({ ...d, dream: v }))} placeholder="e.g. A doctor who helps people!" />
-      </div>
-      <PhotoUpload val={data.photoUrl ?? null} onChange={v => setData(d => ({ ...d, photoUrl: v }))} />
-      <Field label="Child's Favourite Memory in Class" val={data.memory ?? ''} onChange={v => setData(d => ({ ...d, memory: v }))} placeholder="e.g. The day we made a volcano in science…" />
-      <Field label="Teacher's Message" val={data.teacherMsg ?? ''} onChange={v => setData(d => ({ ...d, teacherMsg: v }))} />
-      <Field label="Family's Message" val={data.parentMsg ?? ''} onChange={v => setData(d => ({ ...d, parentMsg: v }))} />
-    </div>
-  )
 
   return (
     <div className="space-y-4">

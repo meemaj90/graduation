@@ -314,21 +314,40 @@ function GradModal({ grad, initialTab = 'about', onClose }: { grad: HofGraduate;
           <div className="px-6 pb-6 flex-1 overflow-y-auto">
             {tab === 'about' ? (
               <div className="space-y-3">
-                {[
-                  { label: '🌟 What I Want to Become', val: grad.dream, col: '#E8720C' },
-                  { label: '💛 My Favourite Memory in Class', val: grad.memory, col: '#60a5fa' },
-                ].map(({ label, val, col }) => (
-                  <div key={label} className="p-4 rounded-2xl" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                    <p className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: col }}>{label}</p>
-                    <p className="text-white/80 text-sm italic">"{val}"</p>
-                  </div>
-                ))}
+                {(() => {
+                  const secondary = grad.level === 'Year 6 → Year 7' || grad.level === 'Year 9 → Year 10'
+                  const InfoCard = ({ label, val, col, bg, border }: { label: string; val: string; col: string; bg?: string; border?: string }) => (
+                    <div className="p-4 rounded-2xl" style={{ background: bg ?? 'rgba(255,255,255,0.04)', border: `1px solid ${border ?? 'rgba(255,255,255,0.08)'}` }}>
+                      <p className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: col }}>{label}</p>
+                      <p className="text-white/80 text-sm italic">"{val}"</p>
+                    </div>
+                  )
+                  return secondary ? (
+                    <>
+                      {grad.subject && <InfoCard label="⭐ Favourite Subject This Year" val={grad.subject} col="#E8720C" />}
+                      {grad.achievement && <InfoCard label="🏆 Achievement Most Proud Of" val={grad.achievement} col="#22c55e" />}
+                      {grad.memory && <InfoCard label="💛 A Memorable Experience" val={grad.memory} col="#60a5fa" />}
+                      {grad.dream && <InfoCard label="🚀 Dream Career / Future Goal" val={grad.dream} col="#f97316" />}
+                      {grad.quote && (
+                        <div className="p-4 rounded-2xl" style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.3)' }}>
+                          <p className="text-xs font-bold uppercase tracking-wider mb-1.5 text-purple-300">💬 Favourite Quote</p>
+                          <p className="text-white/80 text-lg italic font-serif">"{grad.quote}"</p>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {grad.dream && <InfoCard label="🌟 What I Want to Become" val={grad.dream} col="#E8720C" />}
+                      {grad.memory && <InfoCard label="💛 My Favourite Memory in Class" val={grad.memory} col="#60a5fa" />}
+                    </>
+                  )
+                })()}
                 <div className="p-4 rounded-2xl" style={{ background: 'rgba(37,99,235,0.1)', border: '1px solid rgba(37,99,235,0.25)' }}>
                   <p className="text-xs font-bold uppercase tracking-wider mb-1.5 text-blue-300">📝 Teacher&apos;s Message</p>
                   <p className="text-white/70 text-sm italic">"{grad.teacherMsg}"</p>
                 </div>
                 <div className="p-4 rounded-2xl" style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.25)' }}>
-                  <p className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: '#E8720C' }}>❤️ Family&apos;s Message</p>
+                  <p className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: '#E8720C' }}>❤️ Message from Parent / Guardian</p>
                   <p className="text-white/70 text-sm italic">"{grad.parentMsg}"</p>
                 </div>
                 <button onClick={() => setTab('wishes')}

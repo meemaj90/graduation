@@ -5,12 +5,15 @@ export interface HofGraduate {
   id: string
   name: string
   level: 'UKG → Year 1' | 'Year 6 → Year 7' | 'Year 9 → Year 10'
-  subject: string        // favourite subject
+  subject: string
   photoUrl: string | null
-  dream: string          // what they want to become
-  memory: string         // favourite memory in class
+  dream: string
+  memory: string
   teacherMsg: string
   parentMsg: string
+  // Secondary-only fields (Year 6→7 and Year 9→10)
+  achievement?: string
+  quote?: string
 }
 
 export interface Wish {
@@ -82,6 +85,6 @@ export const useHallStore = create<HallState>()(
           },
         })),
     }),
-    { name: 'hall-store-v4' }
+    { name: 'hall-store-v5' }
   )
 )
