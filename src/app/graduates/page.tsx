@@ -411,15 +411,14 @@ function GradModal({ grad, initialTab = 'about', onClose }: { grad: HofGraduate;
         className="w-full max-w-4xl max-h-[88vh] rounded-3xl overflow-hidden shadow-2xl grid md:grid-cols-[280px_1fr] relative"
         style={{ border: '2px solid rgba(212,175,55,0.6)', boxShadow: '0 0 60px rgba(232,114,12,0.25), 0 32px 80px rgba(0,0,0,0.8)' }}>
 
-        {/* Background image fills entire modal */}
+        {/* Background image fills entire modal — content area */}
         <div className="absolute inset-0 z-0"
           style={{
             backgroundImage: 'url(https://i.ibb.co/Gg7mm9t/Chat-GPT-Image-Jul-15-2026-06-14-24-PM.png)',
             backgroundSize: 'cover',
-            backgroundPosition: 'center',
+            backgroundPosition: 'right center',
           }} />
-        {/* Dark overlay so text stays readable */}
-        <div className="absolute inset-0 z-0" style={{ background: 'linear-gradient(160deg,rgba(8,14,50,0.82) 0%,rgba(5,10,35,0.75) 100%)' }} />
+        <div className="absolute inset-0 z-0" style={{ background: 'rgba(5,10,35,0.78)' }} />
 
         <button onClick={onClose}
           className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full flex items-center justify-center text-white/70 hover:text-white transition-colors"
@@ -427,21 +426,29 @@ function GradModal({ grad, initialTab = 'about', onClose }: { grad: HofGraduate;
           <X className="w-4 h-4" />
         </button>
 
-        {/* Profile sidebar */}
-        <div className="relative z-10 px-6 py-8 text-center flex flex-col items-center justify-center md:border-r"
-          style={{ borderColor: 'rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.15)' }}>
-          <div className="rounded-full p-1 mb-4" style={{ background: 'linear-gradient(135deg,#E8720C,#F97316)', boxShadow: '0 0 40px rgba(232,114,12,0.7)' }}>
+        {/* Profile sidebar — own bg positioned so the decorative ring frames the photo */}
+        <div className="relative z-10 px-6 py-8 text-center flex flex-col items-center justify-center md:border-r overflow-hidden"
+          style={{ borderColor: 'rgba(255,255,255,0.12)' }}>
+          {/* Sidebar background: zoom into the left portion of the image so the ring sits behind the photo */}
+          <div className="absolute inset-0 z-0"
+            style={{
+              backgroundImage: 'url(https://i.ibb.co/Gg7mm9t/Chat-GPT-Image-Jul-15-2026-06-14-24-PM.png)',
+              backgroundSize: '400%',
+              backgroundPosition: '8% 38%',
+            }} />
+          <div className="absolute inset-0 z-0" style={{ background: 'rgba(4,8,32,0.45)' }} />
+          <div className="relative z-10 rounded-full p-1 mb-4" style={{ background: 'linear-gradient(135deg,#E8720C,#F97316)', boxShadow: '0 0 48px rgba(232,114,12,0.8), 0 0 80px rgba(232,114,12,0.35)' }}>
             <div className="rounded-full p-0.5" style={{ background: 'rgba(5,10,35,0.8)' }}>
               <Avatar name={grad.name} photoUrl={grad.photoUrl} size="lg" />
             </div>
           </div>
-          <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: '#E8720C' }}>⭐ Class of 2026 ⭐</p>
-          <h2 className="text-2xl font-black text-white drop-shadow-lg">{grad.name}</h2>
-          <p className="text-sm font-semibold mt-0.5" style={{ color: '#f97316' }}>{grad.level}</p>
-          <p className="text-white/50 text-xs">{grad.subject}</p>
+          <p className="relative z-10 text-xs font-bold uppercase tracking-widest mb-1" style={{ color: '#E8720C' }}>⭐ Class of 2026 ⭐</p>
+          <h2 className="relative z-10 text-2xl font-black text-white drop-shadow-lg">{grad.name}</h2>
+          <p className="relative z-10 text-sm font-semibold mt-0.5" style={{ color: '#f97316' }}>{grad.level}</p>
+          <p className="relative z-10 text-white/60 text-xs">{grad.subject}</p>
 
           {/* Download + Share buttons */}
-          <div className="mt-5 flex gap-2 w-full">
+          <div className="relative z-10 mt-5 flex gap-2 w-full">
             <button onClick={onDownload} disabled={downloading}
               className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all disabled:opacity-50 hover:scale-105 active:scale-95"
               style={{ background: 'linear-gradient(135deg,#E8720C,#f97316)', color: '#0a1440', boxShadow: '0 4px 16px rgba(232,114,12,0.45)' }}>
@@ -455,7 +462,7 @@ function GradModal({ grad, initialTab = 'about', onClose }: { grad: HofGraduate;
               {sharing ? 'Sharing…' : 'Share'}
             </button>
           </div>
-          <p className="text-white/50 text-xs mt-2 px-2">WhatsApp · Instagram · any app</p>
+          <p className="relative z-10 text-white/50 text-xs mt-2 px-2">WhatsApp · Instagram · any app</p>
         </div>
 
         {/* Content */}
@@ -573,15 +580,15 @@ function WishPicker({ graduates, onPick, onClose }: { graduates: HofGraduate[]; 
           boxShadow: '0 0 0 1px rgba(212,175,55,0.15), 0 32px 80px -10px rgba(0,0,0,0.8), 0 0 80px rgba(232,114,12,0.2)',
         }}>
 
-        {/* Background image */}
+        {/* Background image — top-aligned so it fills from the very top */}
         <div className="absolute inset-0 z-0"
           style={{
             backgroundImage: 'url(https://i.ibb.co/HLp7Qg2R/Chat-GPT-Image-Jul-15-2026-06-39-33-PM.png)',
             backgroundSize: 'cover',
-            backgroundPosition: 'center',
+            backgroundPosition: 'top center',
           }} />
-        <div className="absolute inset-0 z-0"
-          style={{ background: 'linear-gradient(160deg,rgba(6,12,45,0.88) 0%,rgba(5,10,35,0.82) 100%)' }} />
+        {/* Uniform semi-transparent overlay — not gradient so image shows equally top to bottom */}
+        <div className="absolute inset-0 z-0" style={{ background: 'rgba(5,10,38,0.72)' }} />
 
         {/* Gold corner glints */}
         {['-top-1 -left-1','-top-1 -right-1'].map((pos, i) => (
